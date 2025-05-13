@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Admin Login</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 100%);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        .login-container:hover {
+            transform: translateY(-5px);
+        }
+
+        h2 {
+            text-align: center;
+            color: #00f7ff;
+            text-shadow: 0 0 10px #00f7ff;
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            animation: neon-flicker 1.5s infinite alternate;
+        }
+
+        p {
+            text-align: center;
+            color: #e0e0e0;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 0.5rem;
+            color: #00f7ff;
+            font-weight: bold;
+            text-shadow: 0 0 5px #00f7ff;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            padding: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 5px;
+            font-size: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #e0e0e0;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input:focus {
+            border-color: #00f7ff;
+            box-shadow: 0 0 10px #00f7ff;
+            outline: none;
+        }
+
+        button {
+            background: linear-gradient(90deg, #00f7ff, #ff00ff);
+            color: #000;
+            padding: 12px!important;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: box-shadow 0.3s, transform 0.3s;
+            text-shadow: 0 0 5px #000;
+        }
+
+        button {
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
+            transform: scale(1.05);
+            padding: 12px!important;
+        }
+
+        button:hover {
+            box-shadow: 0 0 20px rgba(0, 168, 168, 0.7);
+            transform: scale(1.05);
+        }
+
+        .message {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff6666;
+            padding: 10px;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .back-icon {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 1.5rem;
+            color: #00f7ff;
+            text-shadow: 0 0 5px #00f7ff;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .back-icon:hover {
+            transform: scale(1.2);
+        }
+
+        @keyframes neon-flicker {
+            0% {
+                text-shadow: 0 0 5px #00f7ff, 0 0 10px #00f7ff, 0 0 15px #00f7ff;
+            }
+            100% {
+                text-shadow: 0 0 10px #00f7ff, 0 0 20px #00f7ff, 0 0 30px #00f7ff;
+            }
+        }
+
+        @media only screen and (max-width: 480px) {
+            .login-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            input[type="text"],
+            input[type="password"],
+            button {
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <i class="fas fa-arrow-left back-icon" onclick="window.history.back();" aria-hidden="true"></i>
+        <h2>AI Admin Login</h2>
+        <p>Please enter your admin username and password.</p>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" placeholder="Enter admin username" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" placeholder="Enter admin password" required>
+
+            <button type="submit">Login</button>
+        </form>
+    </div>
+</body>
+</html>

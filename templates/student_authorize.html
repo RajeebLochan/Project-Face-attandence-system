@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Authorize Student</title>
+    <!-- Include any necessary CSS or external libraries -->
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            margin: 0;
+            padding-top: 80px;
+            color: #ffffff;
+          }
+      
+          .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #00ffe7;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px #00ffe7;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+            z-index: 1000;
+          }
+      
+          .container {
+            max-width: 700px;
+            margin: 40px auto;
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+            transition: 0.3s ease;
+          }
+      
+          h1 {
+            text-align: center;
+            color: #00ffe7;
+            margin-bottom: 25px;
+            text-shadow: 0 0 8px #00ffe7;
+          }
+      
+          .student-details {
+            border-top: 1px solid #00ffe750;
+            padding-top: 20px;
+          }
+      
+          .detail {
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            color: #e0e0e0;
+          }
+      
+          .detail strong {
+            color: #00ffe7;
+            text-shadow: 0 0 5px #00ffe7;
+          }
+      
+          .actions {
+            margin-top: 30px;
+            text-align: center;
+          }
+      
+          .actions a {
+            display: inline-block;
+            margin: 8px 12px;
+            padding: 12px 24px;
+            background: transparent;
+            border: 2px solid #00ffe7;
+            color: #00ffe7;
+            text-shadow: 0 0 5px #00ffe7;
+            border-radius: 30px;
+            font-weight: bold;
+            text-decoration: none;
+            transition: all 0.3s ease-in-out;
+          }
+      
+          .actions a:hover {
+            background-color: #00ffe7;
+            color: #000;
+            box-shadow: 0 0 20px #00ffe7;
+          }
+          button[type="submit"] {
+            background-color:rgb(70, 91, 255);           /* Yellow */
+            color: #000;                         /* Black text */
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+          }
+          
+          button[type="submit"]:hover {
+            background-color:rgb(7, 57, 255);           /* Slightly darker yellow */
+            box-shadow: 0 0 12px rgba(47, 0, 255, 0.6), 0 0 20px rgba(255, 215, 0, 0.3);
+            transform: translateY(-2px);         /* Slight lift on hover */
+          }
+          
+    </style>
+</head>
+
+<body>
+    <!-- Top Nav -->
+    <div class="navbar">
+        Student AI Portal
+    </div>
+
+    <div class="container">
+        <h1>Authorize Student</h1>
+        <div class="student-details">
+            <div class="detail"><strong>Name:</strong> {{ student.name }}</div>
+            <div class="detail"><strong>Email:</strong> {{ student.email }}</div>
+            <div class="detail"><strong>Regd. Number:</strong> {{ student.registration_number }}</div>
+            <div class="detail"><strong>Branch:</strong> {{ student.branch}}</div>
+            <div class="detail"><strong>Year:</strong> {{ student.year}}</div>
+            <div class="detail"><strong>Authorized:</strong> {% if student.authorized %} Yes {% else %} No {% endif %}</div>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <input type="checkbox" id="authorized" name="authorized" {% if student.authorized %} checked {% endif %}>
+                <label for="authorized">Authorize Student</label>
+            </div>
+            <button type="submit">Update Authorization</button>
+        </form>
+        <div class="actions">
+            <a href="{% url 'student-list' %}">Back to List</a>
+            <a href="{% url 'student-detail' pk=student.pk %}">View Details</a>
+        </div>
+    </div>
+</body>
+
+</html>

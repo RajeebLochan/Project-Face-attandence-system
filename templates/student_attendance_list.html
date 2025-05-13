@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+    <title>Student Attendance Portal</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace; /* Hacker-style font */
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); /* Dark gradient */
+            color: #00ffcc; /* Neon cyan text */
+            overflow-x: hidden;
+        }
+
+        /* Responsive Top Nav */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: linear-gradient(90deg, #272547, #161235);
+            color: #00dcef;
+            padding: 15px 30px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px #28274b, 0 0 20px #2c2958;
+            box-shadow: 0 5px 15px rgb(47 43 95);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input {
+            height: 45px;
+        }
+
+        .navbar:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(0, 255, 204, 0.8);
+        }
+
+        .navbar-brand {
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                font-size: 1.5rem;
+                padding: 10px 20px;
+            }
+        }
+
+        .container {
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin-top: 100px; /* Adjusted for larger nav */
+        }
+
+        .table-responsive {
+            margin-top: 20px;
+            flex-grow: 1;
+        }
+
+        .table thead th {
+            vertical-align: middle;
+            text-align: center;
+            background: linear-gradient(90deg, #00ffcc, #00ccff); /* Neon gradient */
+            color: #0f0c29;
+            text-shadow: 0 0 5px #00ffcc;
+            font-weight: bold;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(0, 255, 204, 0.1); /* Subtle neon hover */
+            transform: scale(1.01);
+            transition: all 0.3s ease;
+        }
+
+        .table td,
+        .table th {
+            vertical-align: middle;
+            text-align: center;
+            color: #00ffcc;
+            border-color: rgba(0, 255, 204, 0.2);
+        }
+
+        .heading {
+            text-align: center;
+            margin: 40px 0;
+            color: #00ffcc;
+            font-size: 2.5rem;
+            text-shadow: 0 0 15px #00ffcc, 0 0 30px #00ccff;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ccff;
+            }
+            to {
+                text-shadow: 0 0 20px #00ffcc, 0 0 40px #00ccff;
+            }
+        }
+
+        .footer {
+            margin-top: auto;
+            padding: 10px 0;
+            text-align: left;
+        }
+
+        .back-icon {
+            padding: 15px;
+            font-size: 2em;
+            color: #00ffcc;
+            cursor: pointer;
+            text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ccff;
+            transition: all 0.3s ease;
+            border: 2px solid #00ffcc;
+            border-radius: 50%;
+            background: rgba(0, 255, 204, 0.1);
+        }
+
+        .back-icon:hover {
+            color: #00ccff;
+            text-shadow: 0 0 20px #00ccff, 0 0 40px #00ffcc;
+            transform: rotate(-360deg);
+            background: rgba(0, 255, 204, 0.2);
+        }
+
+        .form-inline .form-control {
+            width: auto;
+            flex: 1 1 auto;
+            background: rgba(15, 12, 41, 0.8);
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            background: rgba(15, 12, 41, 0.9);
+            border-color: #00ccff;
+            box-shadow: 0 0 10px #00ccff;
+            color: #00ffcc;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap; /* Responsive wrapping */
+        }
+
+        .filter-container .input-group {
+            flex: 1;
+            margin-right: 10px;
+            min-width: 200px; /* Minimum width for small screens */
+        }
+
+        .filter-container .input-group:last-child {
+            margin-right: 0;
+        }
+
+        @media (max-width: 768px) {
+            .filter-container {
+                flex-direction: column;
+            }
+
+            .filter-container .input-group {
+                margin-bottom: 15px;
+                margin-right: 0;
+            }
+        }
+
+        .btn-custom {
+            background: linear-gradient(90deg, #00ffcc, #00ccff);
+            color: #0f0c29;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            text-shadow: 0 0 5px #00ffcc;
+            transition: all 0.3s ease;
+        }
+
+        .btn-custom:hover {
+            background: linear-gradient(90deg, #00ccff, #00ffcc);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #00ffcc;
+        }
+
+        img {
+            filter: drop-shadow(0 0 5px #00ffcc); /* Neon effect on images */
+        }
+    </style>
+</head>
+
+<body>
+<!-- Top Nav -->
+<div class="navbar">
+    <span class="navbar-brand"><i class="fas fa-robot" style="font-size: 1.8rem; margin-left: 0px;"></i>&nbspStudent Attendance Portal</span>
+     <!-- AI Icon -->
+    <span onclick="location.href='/'"> <i style="font-size: 1.8rem; margin-left: 10px;" class="fas fa-arrow-left me-2"></i></span>
+</div>
+
+<div class="container">
+    <h2 class="heading">Student Attendance Records</h2>
+    <form method="get" class="filter-container">
+        <div class="input-group">
+            <input type="text" name="search" class="form-control" placeholder="Search for students..."
+                   value="{{ search_query }}">
+            <div class="input-group-append">
+                <button class="btn btn-custom" type="submit"><i class="fas fa-search"></i> Search</button>
+            </div>
+        </div>
+        <div class="input-group">
+            <input type="date" name="attendance_date" class="form-control" value="{{ date_filter }}">
+            <div class="input-group-append">
+                <button class="btn btn-custom" type="submit"><i class="fas fa-calendar-alt"></i> Filter</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Attendance Table -->
+    <div class="table-responsive attendance-table">
+        <table class="table table-bordered table-hover">
+            <thead>
+            <tr>
+                <th>Student Image</th>
+                <th>Student Name</th>
+                <th>Attendance Date</th>
+                <th>Check-in Time</th>
+                <th>Check-out Time</th>
+                <th>Stayed Time</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for data in student_attendance_data %}
+                {% for attendance in data.attendance_records %}
+                    <tr>
+                        <td>
+                            {% if data.student.image %}
+                                <img src="{{ data.student.image.url }}" alt="{{ data.student.name }}"
+                                     style="width: 50px; height: 50px; border-radius: 50%;"/>
+                            {% else %}
+                                No Image
+                            {% endif %}
+                        </td>
+                        <td>{{ data.student.name }}</td>
+                        <td>{{ attendance.date }}</td>
+                        <td>{{ attendance.check_in_time|date:"h:i:s A" }}</td>
+                        <td>{{ attendance.check_out_time|date:"h:i:s A" }}</td>
+                        <td>
+                            {% if attendance.check_in_time and attendance.check_out_time %}
+                                {{ attendance.calculate_duration }}
+                            {% else %}
+                                Not Checked Out
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <i class="fas fa-arrow-left back-icon" onclick="location.href='/'"></i>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+
+</html>

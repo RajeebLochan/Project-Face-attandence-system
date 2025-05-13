@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Camera Configurations List</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+  <!-- Custom CSS -->
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #000;
+      color: #FFD700;
+      padding: 40px 20px;
+    }
+
+    .neon-box {
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+      transition: box-shadow 0.3s ease;
+    }
+
+    .neon-box:hover {
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      text-align: center;
+      color: #FFD700;
+      text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+    }
+
+    table {
+      background-color: #1a1a1a;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    thead {
+      background-color: #343a40;
+      color: #fff;
+    }
+
+    th, td {
+      padding: 16px;
+    }
+
+    tr:hover {
+      background-color: rgba(255, 215, 0, 0.05);
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-neon {
+      background-color: #FFD700;
+      color: #000;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 20px;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+    }
+
+    .btn-neon:hover {
+      background-color:rgba(255, 191, 0, 0.48);
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+    }
+
+    .action-link {
+      color:rgb(245, 216, 54);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .action-link:hover {
+      color:rgb(125, 96, 10);
+    }
+
+    @media (max-width: 576px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .btn-neon {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container neon-box">
+    <h1 class="mb-4">Saved Camera Configurations</h1>
+
+    <div class="table-responsive">
+      <table class="table table-dark table-hover align-middle mb-4">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Camera Source</th>
+            <th>Threshold</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for config in configs %}
+          <tr>
+            <td>{{ config.name }}</td>
+            <td>{{ config.camera_source }}</td>
+            <td>{{ config.threshold }}</td>
+            <td>
+              <a href="{% url 'camera_config_update' config.id %}" class="action-link me-2">Edit</a>
+              |
+              <a href="{% url 'camera_config_delete' config.id %}" class="action-link ms-2">Delete</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-between">
+      <a href="{% url 'camera_config_create' %}" class="btn btn-neon">Create New Configuration</a>
+      <a href="{% url 'home' %}" class="btn btn-neon">Back to Home</a>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

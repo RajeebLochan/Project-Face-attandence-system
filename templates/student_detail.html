@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Details</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      margin: 0;
+      padding-top: 80px;
+      color: #ffffff;
+    }
+
+    .navbar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #00ffe7;
+      padding: 15px 30px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-shadow: 0 0 5px #00ffe7;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+      z-index: 1000;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background-color: rgba(255, 255, 255, 0.05);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+      transition: 0.3s ease;
+    }
+
+    h1 {
+      text-align: center;
+      color: #00ffe7;
+      margin-bottom: 25px;
+      text-shadow: 0 0 8px #00ffe7;
+    }
+
+    .student-details {
+      border-top: 1px solid #00ffe750;
+      padding-top: 20px;
+    }
+
+    .detail {
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+      color: #e0e0e0;
+    }
+
+    .detail strong {
+      color: #00ffe7;
+      text-shadow: 0 0 5px #00ffe7;
+    }
+
+    .actions {
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    .actions a {
+      display: inline-block;
+      margin: 8px 12px;
+      padding: 12px 24px;
+      background: transparent;
+      border: 2px solid #00ffe7;
+      color: #00ffe7;
+      text-shadow: 0 0 5px #00ffe7;
+      border-radius: 30px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .actions a:hover {
+      background-color: #00ffe7;
+      color: #000;
+      box-shadow: 0 0 20px #00ffe7;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Top Nav -->
+  <div class="navbar">
+    Student AI Portal
+  </div>
+
+  <!-- Student Details Container -->
+  <div class="container">
+    <h1>Student Details</h1>
+    <div class="student-details">
+      <div class="detail"><strong>Name:</strong> {{ student.name }}</div>
+      <div class="detail"><strong>Email:</strong> {{ student.email }}</div>
+      <div class="detail"><strong>Regd. Number:</strong> {{ student.registration_number }}</div>
+      <div class="detail"><strong>Branch:</strong> {{ student.branch}}</div>
+      <div class="detail"><strong>Year:</strong> {{ student.year}}</div>
+      <div class="detail"><strong>Authorized:</strong> {% if student.authorized %} Yes {% else %} No {% endif %}</div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <a href="{% url 'student-list' %}"><i class="fas fa-arrow-left"></i> Back to List</a>
+      <a href="{% url 'student-authorize' pk=student.pk %}">Authorize</a>
+      <a href="{% url 'student-delete' pk=student.pk %}">Delete</a>
+    </div>
+  </div>
+
+  <!-- Font Awesome for icons (optional) -->
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+
+</html>

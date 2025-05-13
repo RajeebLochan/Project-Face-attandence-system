@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="camera 'self';">
+  <title>Student Registration</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #ffffff;
+      padding-top: 80px;
+    }
+
+    .navbar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1030;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+    }
+
+    .navbar-brand {
+      color: #00ffcc;
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+
+    .navbar-brand:hover {
+      color: #fff;
+    }
+
+    h2 {
+      color: #00ffcc;
+      text-shadow: 0 0 8px #00ffcc;
+    }
+
+    .video-section video {
+      width: 100%;
+      border-radius: 1rem;
+      border: 3px solid #00ffcc;
+    }
+
+    .form-section {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 1rem;
+      padding: 20px;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.1);
+    }
+
+    .form-group label {
+      color: #00ffcc;
+      font-weight: bold;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #00ffcc, #0077ff);
+      border: none;
+      color: #000;
+      font-weight: bold;
+    }
+
+    .btn-success:hover {
+      box-shadow: 0 0 10px #00ffcc;
+    }
+
+    .back-button {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      color: #00ffcc;
+      cursor: pointer;
+      padding: 10px 20px;
+      border: 2px solid #00ffcc;
+      border-radius: 30px;
+      transition: all 0.3s ease;
+      width: fit-content;
+    }
+
+    .back-button:hover {
+      background-color: #00ffcc;
+      color: #000;
+      box-shadow: 0 0 10px #00ffcc;
+    }
+
+    .image-preview {
+      display: none;
+      margin-top: 15px;
+      border-radius: 1rem;
+      border: 1px solid #ced4da;
+      max-width: 100%;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    }
+
+    @media (max-width: 767px) {
+      .video-section,
+      .form-section {
+        margin-bottom: 20px;
+      }
+
+      .form-section {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand" href="#">Capture Students</a>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container mt-4">
+    <div class="row g-4 align-items-start">
+      <!-- Left Camera -->
+      <div class="col-md-6 video-section">
+        <video id="video" autoplay></video>
+      </div>
+
+      <!-- Right Form -->
+      <div class="col-md-6 form-section">
+        <h2 class="text-center mb-4">Register Now</h2>
+        <form id="registrationForm" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="form-group mb-3">
+            <label for="name">Name:</label>
+            <input type="text" class="form-control" id="name" name="name" required />
+          </div>
+          <div class="form-group mb-3">
+            <label for="email">Email:</label>
+            <input type="email" class="form-control" id="email" name="email" required />
+          </div>
+          <div class="form-group mb-3">
+            <label for="registration_number">Registration Number:</label>
+            <input type="text" class="form-control" id="registration_number" name="registration_number" required />
+          </div>
+          <div class="form-group mb-3">
+            <label for="branch">Branch:</label>
+            <select class="form-control" id="branch" name="branch" required>
+              <option value="">-- Select Branch --</option>
+              <option value="CSE">Computer Science (CSE)</option>
+              <option value="ETC">Electronics and Telecommunication (ETC)</option>
+              <option value="EE">Electrical Engineering (EE)</option>
+              <option value="ME">Mechanical Engineering (ME)</option>
+              <option value="A&EI">Applied Electronics & Instrumentation (A&EI)</option>
+              <option value="CIVIL">Civil Engineering</option>
+              <option value="IT">Information Technology (IT)</option>
+              <option value="CHE">Chemical Engineering</option>
+            </select>
+          </div>
+          
+          <div class="form-group mb-3">
+            <label for="year">Year:</label>
+            <select class="form-control" id="year" name="year" required>
+              <option value="">-- Select Year --</option>
+              <option value="1st Year">First Year</option>
+              <option value="2nd Year">Second Year</option>
+              <option value="3rd Year">Third Year</option>
+              <option value="4th Year">Fourth Year</option>
+            </select>
+          </div>
+          
+
+          <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+          <input type="hidden" id="image_data" name="image_data" />
+          <img id="imagePreview" class="image-preview" src="" alt="Captured Image Preview" />
+
+          <div class="text-center mt-4">
+            <button type="submit" class="btn btn-success px-4 py-2">Submit</button>
+          </div>
+        </form>
+
+        <div class="back-button mt-4 mx-auto" onclick="location.href='/'">
+          <i class="fas fa-arrow-left me-2"></i> Back to Index
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const imageDataInput = document.getElementById("image_data");
+    const registrationForm = document.getElementById("registrationForm");
+    const imagePreview = document.getElementById("imagePreview");
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        video.srcObject = stream;
+        video.play();
+      })
+      .catch((err) => {
+        console.error("Camera access error: ", err);
+        alert("Unable to access camera. Please allow permission or use a supported device.");
+      });
+
+    registrationForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      if (video.readyState >= 2) {
+        const context = canvas.getContext("2d");
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataURL = canvas.toDataURL("image/jpeg");
+        imageDataInput.value = dataURL;
+        imagePreview.src = dataURL;
+        imagePreview.style.display = "block";
+
+        // Slight delay to ensure data is set before form submission
+        setTimeout(() => {
+          registrationForm.submit();
+        }, 100);
+      } else {
+        alert("Video is not ready yet. Please wait a moment and try again.");
+      }
+    });
+  </script>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>

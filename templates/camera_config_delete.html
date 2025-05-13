@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Camera Configuration</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #000;
+            color: #FFD700;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #FFD70055;
+            border-radius: 15px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #FFD700;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.6);
+        }
+
+        p {
+            color: #FFD700;
+            font-size: 1rem;
+            margin-bottom: 30px;
+        }
+
+        .btn-neon-danger {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            transition: 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 0 6px rgba(220, 53, 69, 0.4);
+        }
+
+        .btn-neon-danger:hover {
+            background-color: #c82333;
+            box-shadow: 0 0 12px rgba(220, 53, 69, 0.6), 0 0 18px rgba(220, 53, 69, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-neon-secondary {
+            background-color: #6c757d;
+            color: #fff;
+            font-weight: 600;
+            transition: 0.3s ease;
+            box-shadow: 0 0 6px rgba(108, 117, 125, 0.4);
+        }
+
+        .btn-neon-secondary:hover {
+            background-color: #5a6268;
+            box-shadow: 0 0 12px rgba(108, 117, 125, 0.6);
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 576px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            p {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Delete Camera Configuration</h1>
+        <p>Are you sure you want to delete <strong>"{{ config.name }}"</strong>?</p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="d-flex justify-content-between flex-wrap gap-3">
+                <button type="submit" class="btn btn-neon-danger flex-fill">Yes, Delete</button>
+                <a href="{% url 'camera_config_list' %}" class="btn btn-neon-secondary flex-fill">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI-Powered Student List</title>
+    <!-- Include Tailwind CSS for responsive design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 100%);
+            color: #e0e0e0;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Neon-themed Top Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 1rem 2rem;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #00f7ff;
+            text-shadow: 0 0 10px #00f7ff, 0 0 20px #00f7ff;
+            animation: neon-flicker 1.5s infinite alternate;
+        }
+
+        .nav-links a {
+            color: #00f7ff;
+            margin-left: 1.5rem;
+            font-size: 1.1rem;
+            text-decoration: none;
+            text-shadow: 0 0 5px #00f7ff;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        /* Neon Animation */
+        @keyframes neon-flicker {
+            0% {
+                text-shadow: 0 0 5px #00f7ff, 0 0 10px #00f7ff, 0 0 15px #00f7ff;
+            }
+            100% {
+                text-shadow: 0 0 10px #00f7ff, 0 0 20px #00f7ff, 0 0 30px #00f7ff;
+            }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 100px auto 50px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #00f7ff;
+            text-shadow: 0 0 10px #00f7ff;
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        th,
+        td {
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            padding: 12px;
+            text-align: left;
+            color: #e0e0e0;
+        }
+
+        th {
+            background: linear-gradient(90deg, #007bff, #00f7ff);
+            color: #fff;
+            text-shadow: 0 0 5px #000;
+        }
+
+        tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        tr:hover {
+            background: rgba(0, 255, 255, 0.1);
+            transition: background 0.3s ease;
+        }
+
+        .actions a {
+            display: inline-block;
+            margin-right: 5px;
+            padding: 8px 16px;
+            text-decoration: none;
+            color: #00f7ff;
+            border: 1px solid #00f7ff;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 5px #00f7ff;
+        }
+
+        .actions a:hover {
+            background: #00f7ff;
+            color: #000;
+            box-shadow: 0 0 10px #00f7ff;
+        }
+
+        /* Footer Back Button */
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: #00f7ff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            text-shadow: 0 0 5px #00f7ff;
+            transition: transform 0.3s ease;
+        }
+
+        .footer:hover {
+            transform: scale(1.1);
+        }
+
+        .footer i {
+            margin-right: 10px;
+            font-size: 1.5rem;
+        }
+
+        /* Mobile Menu */
+        .mobile-menu {
+            display: none;
+        }
+
+        .mobile-menu i {
+            color: #00f7ff;
+            font-size: 1.8rem;
+            cursor: pointer;
+        }
+
+        /* Responsive Styles */
+        @media only screen and (max-width: 768px) {
+            .nav-links {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                width: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                padding: 1rem;
+                box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .nav-links a {
+                margin: 0.5rem 0;
+                font-size: 1.2rem;
+            }
+
+            .mobile-menu {
+                display: block;
+            }
+
+            .container {
+                margin: 80px 15px 50px;
+                padding: 1rem;
+            }
+
+            table {
+                font-size: 14px;
+            }
+
+            th,
+            td {
+                padding: 8px;
+            }
+
+            .actions a {
+                padding: 6px 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Neon Top Nav -->
+    <nav class="navbar">
+        <div class="navbar-brand">AI Student Portal</div>
+        <div class="nav-links" id="navLinks">
+             <span onclick="location.href='/'"> <i style="font-size: 1.8rem; margin-left: 10px;" class="fas fa-arrow-left me-2"></i></span>
+        </div>
+        <div class="mobile-menu" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Student List</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Regd. Number</th>
+                    <th>Branch</th>
+                    <th>Year</th>
+                    <th>Authorized</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>{{ student.name }}</td>
+                    <td>{{ student.email }}</td>
+                    <td>{{ student.registration_number }}</td>
+                    <td>{{ student.branch }}</td>
+                    <td>{{ student.year }}</td>
+                    <td>{% if student.authorized %} Yes {% else %} No {% endif %}</td>
+                    <td class="actions">
+                        <a href="{% url 'student-authorize' pk=student.pk %}">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Back to home icon -->
+    <div class="footer" onclick="location.href='{% url 'home' %}'">
+        <i class="fas fa-home"></i> Back to Home
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+        }
+    </script>
+</body>
+
+</html>

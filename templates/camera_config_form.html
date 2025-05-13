@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ config.name|default:"Create Camera Configuration" }}</title>
+
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #000;
+            color: #FFD700;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #FFD70055;
+            border-radius: 15px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        h1 {
+            color: #FFD700;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.7);
+            font-size: 1.8rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        label {
+            margin-top: 15px;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid #FFD70044;
+            color: #FFD700;
+            box-shadow: none;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            background-color: #111;
+            border-color: #FFD700;
+            box-shadow: 0 0 5px rgba(255, 215, 0, 0.6);
+            color: #FFD700;
+        }
+
+        .btn-neon {
+            background-color: #FFD700;
+            color: #000;
+            border: none;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+        }
+
+        .btn-neon:hover {
+            background-color:rgba(255, 193, 7, 0.48);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .alert {
+            background-color: rgba(255, 255, 0, 0.15);
+            color: #FFD700;
+            border: 1px solid #FFD70033;
+        }
+
+        .nav-link-btn {
+            background-color: #FFD700;
+            color: #000;
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        .nav-link-btn:hover {
+            background-color:rgba(255, 193, 7, 0.48);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+        }
+
+        @media (max-width: 576px) {
+            .form-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h1>{{ config.name|default:"Create Camera Configuration" }}</h1>
+
+    {% for message in messages %}
+        <div class="alert alert-warning py-2 mb-3">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label for="name" class="form-label">Camera Name:</label>
+            <input type="text" class="form-control" id="name" name="name"
+                   value="{{ config.name|default:'' }}" placeholder="Enter camera name" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="camera_source" class="form-label">Camera Source:</label>
+            <input type="text" class="form-control" id="camera_source" name="camera_source"
+                   value="{{ config.camera_source|default:'' }}"
+                   placeholder="Enter 0 or IP camera URL" required>
+        </div>
+
+        <div class="mb-4">
+            <label for="threshold" class="form-label">Threshold:</label>
+            <input type="number" step="0.01" class="form-control" id="threshold" name="threshold"
+                   value="{{ config.threshold|default:0.6 }}" placeholder="0.0 to 1.0" required>
+        </div>
+
+        <button type="submit" class="btn btn-neon w-100 mb-3">Save</button>
+    </form>
+
+    <div class="d-flex justify-content-between">
+        <a href="{% url 'camera_config_list' %}" class="btn nav-link-btn">Back to List</a>
+        <a href="{% url 'home' %}" class="btn nav-link-btn">Back to Home</a>
+    </div>
+</div>
+
+<!-- Bootstrap JS (optional, for some interactive components) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

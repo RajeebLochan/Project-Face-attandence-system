@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI-Powered Attendance System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0f0f1a;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .top-nav {
+      background: #1b1b2f;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      border-bottom: 1px solid #333;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .top-nav .nav-left h1 {
+      font-size: 1.7em;
+      color: #0fffc1;
+    }
+
+    .top-nav .nav-right a {
+      background: #0fffc1;
+      color: #000;
+      padding: 8px 16px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .top-nav .nav-right a:hover {
+      background: #00e6b8;
+    }
+
+    .container {
+      display: flex;
+      flex-grow: 1;
+      flex-direction: row;
+    }
+
+    .sidebar {
+      width: 250px;
+      background: linear-gradient(180deg, #1b1b2f, #162447);
+      padding: 20px;
+      height: 100vh;
+      position: fixed;
+      overflow-y: auto;
+      border-right: 1px solid #333;
+    }
+
+    .sidebar h2 {
+      color: #0fffc1;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 1.8em;
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      color: #fff;
+      text-decoration: none;
+      padding: 12px 15px;
+      margin: 8px 0;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+
+    .sidebar a:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar a i {
+      margin-right: 12px;
+      color: #0fffc1;
+    }
+
+    .main-content {
+      margin-left: 250px;
+      padding: 20px;
+      flex-grow: 1;
+    }
+
+    .hero-section {
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      padding: 60px 20px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+    }
+
+    .hero-section h1 {
+      font-size: 2.5em;
+      color: #0fffc1;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px #0fffc1;
+    }
+
+    .hero-section .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .card {
+      background: rgba(0, 255, 204, 0.05);
+      border: 1px solid #0fffc1;
+      border-radius: 10px;
+      width: 200px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 0 30px rgba(0, 255, 204, 0.6);
+    }
+
+    .card i {
+      font-size: 2em;
+      color: #0fffc1;
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      color: #e0f7fa;
+      font-weight: 600;
+    }
+    
+    .footer {
+      background: #1b1b2f;
+      color: #ccc;
+      text-align: center;
+      padding: 30px 20px;
+      font-size: 0.9em;
+      margin-top: auto;
+      border-top: 1px solid #333;
+    
+      /* Add this line to nudge it right */
+      padding-left: 240px;
+    }
+
+    .footer strong {
+      color: #0fffc1;
+    }
+
+    .footer .icons i {
+      margin: 0 10px;
+      font-size: 1.2em;
+      color: #0fffc1;
+      transition: color 0.3s;
+    }
+
+    .footer .icons i:hover {
+      color: #00e6b8;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        position: relative;
+        height: auto;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 10px;
+      }
+
+      .top-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .top-nav .nav-right {
+        align-self: flex-end;
+      }
+    
+    
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="nav-left">
+      <h1>AI Dashboard</h1>
+    </div>
+    {% if user.is_authenticated %}
+    <div class="nav-right">
+      <a href="{% url 'logout' %}" class="logout-btn">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </a>
+    </div>
+    {% else %}
+    <div class="nav-right">
+      <a href="{% url 'login' %}" class="login-btn">
+        <i class="fas fa-sign-in-alt"></i> Login
+      </a>
+    </div>
+    {% endif %}
+  </nav>
+
+  <div class="container">
+    <div class="sidebar">
+      <a href="{% url 'capture_student' %}"><i class="fas fa-user-plus"></i>Student Registration</a>
+      <a href="{% url 'student-list' %}"><i class="fas fa-user-friends"></i>Manage Students</a>
+      <a href="{% url 'capture_and_recognize' %}"><i class="fas fa-camera"></i>Mark Attendance</a>
+      <a href="{% url 'student_attendance_list' %}"><i class="fas fa-list"></i>Attendance Details</a>
+      <a href="{% url 'camera_config_list' %}"><i class="fas fa-video"></i>Manage Cameras</a>
+    </div>
+
+    <div class="main-content">
+      <div class="hero-section">
+        <h1>Face Based Student Attendance System</h1>
+        <div class="clock" id="clock" style="font-size: 3em; font-weight: bold; color: #0fffc1; text-shadow: 0 0 10px #0fffc1; margin-bottom: 10px;"></div>
+        
+        <div class="date" id="date" style="font-size: 2em; color: #e0f7fa; margin-bottom: 10px; text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);"></div>
+      
+        <div class="greeting" id="greeting" style="font-size: 1.5em; font-style: italic; color: #b2dfdb; margin-top: 15px; text-shadow: 0 0 4px rgba(0, 255, 204, 0.2);"></div>
+
+        <div class="buttons">
+          <div class="card">
+            <a href="{% url 'student-list' %}">
+              <i class="fas fa-user-graduate"></i>
+              <p>Total Students: {{ total_students }}</p>
+            </a>
+          </div>
+          <div class="card">
+            <a href="{% url 'student_attendance_list' %}">
+              <i class="fas fa-calendar-check"></i>
+              <p>Total Attendance Records: {{ total_attendance }}</p>
+            </a>
+          </div>
+          <div class="card">
+            <a href="{% url 'student_attendance_list' %}">
+              <i class="fas fa-sign-in-alt"></i>
+              <p>Total Check-Ins: {{ total_check_ins }}</p>
+            </a>
+          </div>
+          <div class="card">
+            <a href="{% url 'student_attendance_list' %}">
+              <i class="fas fa-sign-out-alt"></i>
+              <p>Total Check-Outs: {{ total_check_outs }}</p>
+            </a>
+          </div>
+          <div class="card">
+            <a href="{% url 'camera_config_list' %}">
+              <i class="fas fa-video"></i>
+              <p>Total Cameras: {{ total_cameras }}</p>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function updateClock() {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
+        const timeString = `${hours.toString().padStart(2, '0')}:${minutes}:${seconds}`;
+
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        const dateString = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+        let greeting = '';
+        if (hours < 12) {
+            greeting = 'Good Morning! Welcome to class. Let\'s have a productive day! 🌞';
+        } else if (hours < 17) {
+            greeting = 'Good Afternoon! Keep up the great work today.';
+        } else {
+            greeting = 'Good Evening! Great to see your dedication.';
+        }
+
+        document.getElementById('clock').innerText = timeString;
+        document.getElementById('date').innerText = dateString;
+        document.getElementById('greeting').innerText = greeting;
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock(); // Initial call
+</script>
+  <footer class="footer">
+    <p>
+      Developed by Final Year Students of <strong>Electronics & Telecommunication Engineering (2022-2025)</strong><br>
+      Project: <strong>AI-Based Attendance System</strong>
+    </p>
+    <div class="icons">
+      <i class="fab fa-github"></i>
+      <i class="fab fa-linkedin"></i>
+      <i class="fas fa-envelope"></i>
+    </div>
+    <p>&copy; 2025 All Rights Reserved | Team ETC</p>
+  </footer>
+</body>
+</html>
