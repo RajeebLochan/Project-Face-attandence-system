@@ -56,6 +56,7 @@ python manage.py runserver
 ⚠️ Note for Windows Users: You must have Visual C++ Build Tools installed to compile some dependencies.
 💡 Linux Users: No additional C++ setup is required.
 ##🔑 Admin Login Credentials
+
 Username: TeamRajeeb
 
 Password: Sai@2025
