@@ -1,4 +1,4 @@
-# 🎯 Face Recognition-Based Attendance System
+#  Face Recognition-Based Attendance System
 
 A real-time face recognition-based attendance system built using **Python**, **Django**, **OpenCV**, and **FaceNet-PyTorch**. This system captures student faces using a webcam, performs deep learning-based recognition, and marks attendance automatically in a contactless and secure manner.
 
