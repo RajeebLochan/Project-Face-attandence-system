@@ -35,7 +35,7 @@ A real-time face recognition-based attendance system built using **Python**, **D
 git clone https://github.com/RajeebLochan/Project-Face-attandence-system.git
 cd Project-Face-attandence-system
 ```
-## 2. Create and Activate Virtual Environment
+2. Create and Activate Virtual Environment
 ```bash
 python -m venv venv
 
@@ -45,15 +45,15 @@ source venv/bin/activate
 # For Windows
 venv\Scripts\activate
 ```
-##3. Install Required Dependencies
+3. Install Required Dependencies
 ```bash
 pip install -r requirements.txt
 ```
-##4. Run the Django Server
+4. Run the Django Server
 ```bash
 python manage.py runserver
 ```
-##⚠️ Note for Windows Users: You must have Visual C++ Build Tools installed to compile some dependencies.
+⚠️ Note for Windows Users: You must have Visual C++ Build Tools installed to compile some dependencies.
 💡 Linux Users: No additional C++ setup is required.
 ##🔑 Admin Login Credentials
 Username: TeamRajeeb
