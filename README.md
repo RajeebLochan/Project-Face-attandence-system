@@ -57,7 +57,7 @@ python manage.py runserver
 💡 Linux Users: No additional C++ setup is required.
 
 
-##🔑 Admin Login Credentials
+🔑 Admin Login Credentials
 
 Username: TeamRajeeb
 
