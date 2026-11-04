@@ -1,360 +1,320 @@
-# Face Recognition Attendance System
+# Attendance
 
-A Django web application that records student attendance with **staff-confirmed face
-recognition** from a browser webcam, plus manual attendance and audited corrections. It runs
-on a headless server: the browser owns the camera, and the server only analyses frames it
-receives.
+A Django web application for recording student attendance at a school, college or training centre.
+Staff check students in and out at a browser-based kiosk that suggests a match from the camera
+image, or record attendance by hand. Every match is confirmed by a person before anything is saved.
 
-> **Security notice.** Earlier public versions of this repository exposed an administrator
-> password, the Django secret key, and students' photos and personal data. Removing them from
-> the latest commit does not remove them from Git history or from existing copies. The owner
-> actions are in [`docs/INCIDENT_CLEANUP_RUNBOOK.md`](docs/INCIDENT_CLEANUP_RUNBOOK.md). That
-> exposure remains open until the runbook is completed.
+It is built for two kinds of users:
 
-**Status:** not production-ready. It is suitable for a *supervised pilot* only after:
+- **Attendance admins**, who enrol students, review photos, manage batches, schedules, leave and
+  staff accounts, and look after e-mail notifications.
+- **Instructors**, who run the kiosk, record manual attendance and corrections, and see reports for
+  the batches they are assigned to.
 
-- the incident runbook is completed,
-- the institution completes the privacy notice and retention policy, and
-- recognition is evaluated on consented local data.
+> **Before you deploy this**
+>
+> - Earlier versions of this repository published an administrator password, the Django secret
+>   key and students' photos and personal data. They are still in Git history and in any copies
+>   made at the time. The steps that only the repository owner can take are in
+>   [docs/INCIDENT_CLEANUP_RUNBOOK.md](docs/INCIDENT_CLEANUP_RUNBOOK.md); that work is not done yet.
+> - Face matching has not been evaluated on real people. Its error rates are unknown, the
+>   threshold is the model author's published default, and there is no protection against a
+>   printed photo or a screen. Treat recognition as a convenience for staff, never as proof.
 
-See [Limitations](#limitations).
+![Today page with the day's register](docs/screenshots/dashboard.png)
 
-## Contents
+## What it does
 
-- [How it works](#how-it-works)
-- [Requirements](#requirements)
-- [Local setup](#local-setup)
-- [Roles and daily use](#roles-and-daily-use)
-- [Face recognition: what it does and does not do](#face-recognition-what-it-does-and-does-not-do)
-- [Privacy, consent and retention](#privacy-consent-and-retention)
-- [Configuration](#configuration)
-- [Testing and checks](#testing-and-checks)
-- [Deployment](#deployment)
-- [Backup and restore](#backup-and-restore)
-- [Performance](#performance)
-- [Upgrading from the previous version](#upgrading-from-the-previous-version)
-- [Limitations](#limitations)
+- **Today page.** Who has checked in, who is late or not yet recorded, a timeline of check-ins
+  against the expected start, photos waiting for review, missing check-outs from earlier days, and
+  operational problems such as failed e-mails or a stopped worker.
+- **Kiosk.**
+  - The browser shows a live camera preview and sends one small frame at a time.
+  - The server proposes a student by ID, and the staff member confirms or rejects.
+  - Check-in and check-out are separate, explicit modes.
+- **Manual attendance.**
+  - Search by name or registration number, see today's status, then check in or out with a reason.
+  - Past entries and corrections are separate, audited actions that need a reason.
+  - A missing check-out is never filled in automatically.
+- **Students.**
+  - Search, filters and pagination; CSV import with a preview and duplicate detection.
+  - Consented photo enrolment, active and left status, and batch membership with dates.
+  - Contact details for the student and a parent or guardian, with per-recipient e-mail preferences.
+- **Batches and schedules.**
+  - Working days, expected start time, grace period and holidays.
+  - Changes take effect from a date, so earlier reports are not rewritten.
+- **Leave** that turns an absence into "on leave".
+- **Reports.**
+  - Status counts per student over a date range, filtered by batch.
+  - CSV export and a printable daily register.
+- **E-mail notifications** for check-ins, check-outs and (optionally) corrections, sent to verified
+  staff, students or guardians, plus an optional daily summary. Details are in the
+  [Notifications](#notifications) section.
+- **Audit history** of every attendance change, enrolment, consent change, setting change and
+  staff change, searchable by student, staff member, action and date.
 
-## How it works
+Attendance does not depend on face recognition. Students who decline it, or whose consent is
+withdrawn, are recorded manually like everyone else.
 
-1. **Enrolment (Attendance admin).** Staff record the student's consent against a versioned
-   privacy notice, enter their details and capture one photo. The server checks the image and
-   requires **exactly one face**. It stores the photo privately under a random file name and
-   saves a face template linked to the student's ID.
-2. **Authorisation (Attendance admin).** An admin reviews the protected photo and authorises
-   recognition. Without consent, a photo and a current template, authorisation is refused.
-3. **Kiosk (Instructor or admin).**
-   - The browser kiosk shows a camera preview and sends one downscaled frame at a time to the
-     server.
-   - The server answers *candidate*, *unknown*, *ambiguous*, *unsuitable frame* (no face,
-     several faces, face too small) or *model unavailable*.
-   - A candidate is never recorded automatically: the staff member compares the person with
-     the enrolment photo and confirms or rejects.
-   - Check-in and check-out are explicit modes. Repeating an event that is already recorded
-     changes nothing.
-4. **Manual attendance and corrections (Instructor or admin).** These are available for
-   everyone, require a reason, and are written to the audit log with before/after values.
+| | |
+|---|---|
+| ![Kiosk confirming a match](docs/screenshots/kiosk.png) | ![Manual attendance](docs/screenshots/manual-attendance.png) |
+| ![Student record](docs/screenshots/student-detail.png) | ![Attendance report](docs/screenshots/reports.png) |
+| ![Notification queue](docs/screenshots/notifications.png) | ![Settings](docs/screenshots/settings.png) |
 
-More detail: [`docs/PROJECT_OVERVIEW.md`](docs/PROJECT_OVERVIEW.md).
+The screenshots use invented people and drawn silhouettes, not faces. More are in
+[docs/screenshots](docs/screenshots); the `before-*` files show the previous interface.
 
 ## Requirements
 
-- **Python 3.12 or 3.13** (both tested; numpy 2.5 requires ≥ 3.12). Linux, macOS or Windows.
-- About 40 MB for the face models, downloaded once by a management command.
-- A modern browser with a webcam on the kiosk device.
-  - Browsers only allow camera access on **HTTPS** or on `http://localhost`.
-- Optional: PostgreSQL 14+ (recommended when several worker processes write at once).
+- **Python:** 3.12 or 3.13. Both are tested; numpy 2.5 needs at least 3.12.
+- **Database:** PostgreSQL 14 or newer in production. SQLite is fine for development and a
+  single-host trial.
+- **Face models:** about 40 MB, downloaded once with `setup_face_models`. Everything runs on the
+  CPU; there is no GPU, PyTorch, display or server camera requirement.
+- **Kiosk:** a browser with a webcam. Browsers only allow camera access over HTTPS or on
+  `http://localhost`.
+- **Production stack:** Docker with the Compose plugin, if you use the included deployment.
 
-No GPU, PyTorch, display, audio device or server-side camera is needed.
-
-## Local setup
+## Quick start (development)
 
 ```bash
 git clone https://github.com/RajeebLochan/Project-Face-attandence-system.git
 cd Project-Face-attandence-system
 python3.12 -m venv .venv
-source .venv/bin/activate            # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env                 # optional for development; never commit .env
-python manage.py migrate             # creates db.sqlite3 and the role groups
-python manage.py createsuperuser     # choose your own credentials
-python manage.py setup_face_models   # downloads and SHA-256-verifies the models into var/models/
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py setup_face_models
 python manage.py runserver
 ```
 
-Open <http://localhost:8000/>, log in, and go to `/admin/` → *Users* to add staff to the
-**Attendance admin** or **Instructor** group.
+Open <http://localhost:8000/> and log in. In development:
 
-Without internet access on the server, download the two model files elsewhere from the
-URLs in `app1/recognition/model_files.py` and run
-`python manage.py setup_face_models --from-dir /path/to/files`. Checksums are still
-verified. Without models, enrolment and the kiosk show a clear message, and manual
-attendance still works.
+- E-mails are written as files to `var/sent-mail/` instead of being sent.
+- Run `python manage.py run_notification_worker` in a second terminal to process the queue.
 
-## Roles and daily use
+**Model setup without internet on the server.** `setup_face_models` downloads the YuNet detector
+and SFace recogniser from a pinned commit of the OpenCV Model Zoo and checks their SHA-256 hashes.
+Without internet access, download the two files listed in `app1/recognition/model_files.py`
+elsewhere and run:
 
-| Role | Can |
+```bash
+python manage.py setup_face_models --from-dir /path/to/files
+```
+
+Without the models, the kiosk and photo enrolment show a clear error; everything else works.
+
+## Daily use
+
+1. **First run.**
+   - Open *Settings*: enter the institution name and a contact address for attendance questions.
+   - Create batches with a schedule.
+   - Add staff on the *Staff* page. Attendance admins see everything; instructors only see the
+     batches you assign them, including on direct links and exports.
+2. **Students.**
+   - Enrol one at a time (consent, details, photo) or import a CSV.
+   - A photo is used for recognition only after an admin has reviewed it on the student's page.
+3. **Each day.**
+   - Open the kiosk, choose *Check in* or *Check out*, and start the camera.
+   - When the page proposes a student, compare the person with the enrolment photo, then press
+     *Confirm* or *Not this person*. A repeated confirmation changes nothing.
+4. **When the camera can't help**, use *Manual attendance*: search, pick the student, give a
+   reason, and press *Check in now* or *Check out now*.
+5. **Fixing mistakes.**
+   - *Record a past entry* is for times that have already passed.
+   - *Correct* (on any record) changes existing times.
+   - Both need a reason, and the original values stay in the audit history.
+6. **Unfinished days.** A check-in without a check-out on an earlier day is listed on the Today
+   page until someone enters the real time or marks it as reviewed. The system never invents a
+   check-out time.
+
+### How statuses are decided
+
+| Status | Meaning |
 |---|---|
-| **Attendance admin** (group) | Enrol students, edit details, replace photos, authorise or revoke, remove biometric data, delete students without attendance history, plus everything an Instructor can do, plus the audit log |
-| **Instructor** (group) | Use the kiosk, view students and enrolment photos, view and export attendance, record manual attendance, correct records |
-| Superuser | Everything, including user and group management in `/admin/` |
-| Any other logged-in user | Sees a "403 Access denied" page |
+| Present | Checked in by the expected start plus the grace period |
+| Late | Checked in after that |
+| Checked in | Checked in, but no schedule applies, so lateness is not judged |
+| Absent | A past working day with a schedule: on the roster, no check-in, no leave, no holiday |
+| On leave / Holiday / No class | Approved leave, a holiday, or not a working day |
+| Not yet recorded | Today, a future day, or any day without a schedule |
+| Not enrolled | Before the enrolment date, after the student left, or not on a batch roster that day |
 
-The groups and their permissions are defined in `app1/roles.py` and re-synchronised on every
-`migrate` (or with `python manage.py sync_roles`). The Django admin is read-only for app data,
-so that all changes go through validated, audited views.
+Absence is never inferred without a schedule.
 
-## Face recognition: what it does and does not do
+## Notifications
 
-- **Pipeline:**
-  - Detection: OpenCV's **YuNet** detector finds the face and five landmarks.
-  - Embedding: `FaceRecognizerSF.alignCrop` aligns the face, and **SFace** produces a
-    128-dimensional embedding, which is L2-normalised.
-  - Model source: both models come from a pinned commit of the OpenCV Model Zoo and are
-    checked against SHA-256 hashes (`app1/recognition/model_files.py`).
-- **Matching:**
-  - The distance is the Euclidean distance between normalised embeddings, in the range 0–2.
-  - A match needs a distance below `FACE_MATCH_THRESHOLD` (default **1.128**). The best
-    student must also beat the next-best different student by at least `FACE_MATCH_MARGIN`
-    (default 0.10); otherwise the result is *ambiguous* and nobody is proposed.
-  - **A distance is not a confidence or a probability.**
-- **Not calibrated:** 1.128 is the value OpenCV publishes for SFace. It has **not** been
-  validated for this deployment, its cameras or its population. Before relying on it, measure
-  false-accept and false-reject rates on a consented, labelled local dataset and choose the
-  threshold from a target false-accept rate.
-- **No liveness detection:** a printed photo or a screen may be accepted. This is why every
-  match requires a staff member to confirm, and why no unsupervised mode exists. Checking that
-  several frames agree would not be liveness detection, and none is claimed.
-- **One face per frame:** the kiosk asks for one person at a time.
-- **Templates are versioned:** after changing models or preprocessing (`MODEL_VERSION`), run
-  `python manage.py rebuild_face_embeddings`.
-- **No accuracy figures are claimed** anywhere in this project. The automated tests use a fake
-  engine and synthetic images, which prove the software logic but say nothing about
-  recognition accuracy.
+E-mails go out for check-ins, check-outs and, if you switch it on, corrections and past entries.
+Recipients can be:
 
-## Privacy, consent and retention
+- selected staff, who only hear about students they can see;
+- the student;
+- a parent or guardian.
 
-- **Consent first:** the enrolment form requires staff to confirm that the student (or their
-  parent or guardian, if under 18) received privacy notice version `PRIVACY_NOTICE_VERSION`
-  and consented. The status, time, notice version and staff member are stored. The institution
-  must complete `templates/privacy_notice.html` (controller, contact, retention) before use.
-- **Withdrawal:** *Remove biometric data* deletes the photo file (after the transaction
-  commits) and all face templates, revokes recognition and records consent as withdrawn.
-  Attendance history is kept. Students without consent use manual attendance.
-- **Deletion:** students without attendance history can be deleted completely. Attendance
-  records are protected from silent cascade deletion.
-- **Storage:**
-  - Photos are re-encoded as JPEG (embedded metadata removed), stored with `0600`
-    permissions under random names in `PRIVATE_MEDIA_ROOT`, and served only by a
-    permission-checked view with `Cache-Control: private, no-store`.
-  - Kiosk frames are never stored.
-  - Logs contain IDs only, never names, images or embeddings.
-- **Retention:** the institution must set a retention period, for example deleting biometric
-  data when a student leaves, and must review the audit log (`/audit/`) periodically.
+Each address must be confirmed through a verification link first. If the same address appears
+more than once, it gets one message. Each message contains only:
 
-## Configuration
+- the institution name;
+- the student's name and registration number;
+- the event, with the date and local time labelled with the time zone;
+- whether it was recorded manually;
+- the institution's contact for reporting mistakes.
 
-All settings come from environment variables (or a local `.env` file). See
-[`.env.example`](.env.example).
+There are never photos. Staff copies include a link to the record, which requires login.
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `DJANGO_SECRET_KEY` | dev placeholder | **Required in production**: ≥ 50 random characters |
-| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1,[::1]` (dev) | **Required in production**; `*` refused |
-| `DJANGO_CSRF_TRUSTED_ORIGINS` | – | e.g. `https://attendance.example.edu` |
-| `DJANGO_TRUST_X_FORWARDED_PROTO` | `false` | Set to `true` only behind a proxy that overwrites this header |
-| `DATABASE_URL` | `sqlite:///db.sqlite3` | or `postgres://user:pass@host:5432/db` |
-| `PRIVATE_MEDIA_ROOT` | `var/private_media` | Enrolment photos; **never serve this directory** |
-| `FACE_MODEL_DIR` | `var/models` | ONNX models |
-| `FACE_MATCH_THRESHOLD` | `1.128` | L2 distance limit, between 0 and 2 (not a confidence) |
-| `FACE_MATCH_MARGIN` | `0.10` | Required gap to the next-best student |
-| `FACE_MIN_SIZE_PX` | `64` | Smallest usable face (in the downscaled analysis image) |
-| `KIOSK_MIN_FRAME_INTERVAL_SECONDS` | `0.5` | Per-user frame rate limit |
-| `KIOSK_MAX_CONCURRENT_ANALYSES` | `1` | Analyses at once per process; extra frames get "busy" |
-| `KIOSK_FRAME_MAX_BYTES` / `ENROLMENT_PHOTO_MAX_BYTES` | 1.5 MB / 5 MB | Upload limits |
-| `PRIVACY_NOTICE_VERSION` | `1.0` | Recorded with each consent |
-| `LOGIN_THROTTLE_MAX_FAILURES` | `5` per 15 min | Per username (per address: 50) |
+**How delivery works:**
 
-Invalid numeric values (non-numbers, `nan`, `inf`, out of range) stop start-up with a clear
-error.
+- The attendance change and its e-mails are written to the database in one transaction. A
+  rolled-back change, a repeated (no-op) submission or an unconfirmed kiosk match never produces
+  an e-mail.
+- A separate process sends the queue:
 
-## Testing and checks
+  ```bash
+  python manage.py run_notification_worker
+  ```
+
+  You can run several workers; on PostgreSQL they never claim the same message.
+- Temporary failures are retried with backoff (1, 5, 15 and 60 minutes). Permanent rejections
+  fail immediately.
+- A worker that crashes mid-send has its messages requeued after five minutes.
+- Queued messages are cancelled when the recipient's address, preference or access changes.
+
+**Statuses** are *Queued*, *Processing*, *Accepted by mail server*, *Failed* and *Cancelled*.
+"Accepted" means the outgoing server took the message, not that it reached the inbox. If the
+network fails after the server accepted a message, the retry can deliver it twice; SMTP does not
+offer exactly-once delivery.
+
+**Configuration:**
+
+- SMTP settings come from environment variables (`EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS` or
+  `EMAIL_USE_SSL`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`,
+  `EMAIL_TIMEOUT`). The password is never shown in the interface or written to logs.
+- *Settings* has a rate-limited test e-mail button and previews of each message.
+- The optional daily summary is off by default; it is sent at most once per address per day.
+
+Sender-domain setup (SPF, DKIM, DMARC), local testing with Mailpit, scheduling and
+troubleshooting are covered in [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md).
+
+## Production deployment
+
+The repository includes a Docker Compose stack:
+
+- PostgreSQL;
+- the web app under gunicorn;
+- the notification worker;
+- the summary scheduler;
+- Caddy as the HTTPS reverse proxy;
+- optional Mailpit for testing.
+
+The proxy only receives static files. The volume with enrolment photos is mounted into the web
+and worker containers, never into the proxy.
+
+```bash
+cp deploy/env.production.example .env        # then replace every placeholder
+docker compose build
+docker compose run --rm web migrate
+docker compose run --rm web setup-models
+docker compose run --rm web manage createsuperuser
+docker compose up -d
+```
+
+Step-by-step instructions, the reverse-proxy assumptions, health checks, monitoring, upgrades and
+rollback are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). `deploy/smoke-test.sh` brings the whole
+stack up with synthetic data and checks the following, then removes it again:
+
+- HTTPS and the security headers;
+- that photos are not exposed;
+- login and throttling across workers;
+- e-mail delivery through the worker;
+- backup and restore.
+
+## Backup and restore
+
+```bash
+deploy/backup.sh /secure/backups
+deploy/restore.sh /secure/backups/db-STAMP.dump /secure/backups/private-STAMP.tar.gz
+```
+
+- Backups contain personal and biometric data. Encrypt them, restrict access, and delete them when
+  your retention period ends.
+- Restore the database and the photo store from the same backup.
+- Re-apply any consent withdrawals or deletions made after it. They are listed in the audit
+  history; see [docs/OPERATIONS.md](docs/OPERATIONS.md).
+
+## Privacy controls
+
+- **Photos:**
+  - Stored outside any web-served directory, under random file names, readable only by the
+    application.
+  - Shown only to staff with the photo permission, with `Cache-Control: private, no-store`.
+  - Re-encoded on upload, which drops embedded metadata.
+- **Consent:**
+  - Recorded with the time, the staff member and the privacy-notice version.
+  - Recognition needs consent, a reviewed photo and authorisation.
+  - *Remove biometric data* deletes the photo and face template and keeps attendance history.
+- **Kiosk frames** are analysed in memory and discarded.
+- **Logs** contain record IDs, not names, photos or face templates.
+- **Privacy notice:** `templates/privacy_notice.html` is a template your institution must
+  complete before collecting photos.
+
+## Tests and contributing
 
 ```bash
 pip install -r requirements-dev.txt
-python manage.py test                                   # full suite (SQLite file DB, fake engine)
-python manage.py check
-python manage.py makemigrations --check --dry-run
+python manage.py test                     # SQLite, fake face engine, in-memory e-mail
 ruff check .
+python manage.py makemigrations --check --dry-run
 pip-audit -r requirements.txt
 ```
 
 Optional suites:
 
 ```bash
-# PostgreSQL (incl. real multi-thread concurrency tests)
-pip install -r requirements-postgres.txt
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/attendance python manage.py test
-
-# Real models (after setup_face_models); verifies loading, checksums and pipeline, not accuracy
-FACE_TEST_MODEL_DIR=var/models python manage.py test --tag model
-
-# Browser kiosk tests with Chromium's fake camera
-python -m playwright install chromium
-python manage.py test --tag browser
-
-# Production deployment checks with representative settings
-DJANGO_SETTINGS_MODULE=Project101.settings.prod DJANGO_SECRET_KEY=<50+ random chars> \
-  DJANGO_ALLOWED_HOSTS=attendance.example.edu DJANGO_SECURE_HSTS_PRELOAD=true \
-  python manage.py check --deploy --fail-level WARNING
+DATABASE_URL=postgres://USER:PASS@localhost:5432/DB python manage.py test   # PostgreSQL
+FACE_TEST_MODEL_DIR=var/models python manage.py test --tag model            # real models
+python -m playwright install chromium && python manage.py test --tag browser
+SCREENSHOT_DIR=docs/screenshots python manage.py test --tag screenshots
+sh deploy/smoke-test.sh                                                     # needs Docker
 ```
 
-Tests that need models or a browser skip themselves when those are not installed. CI
-(`.github/workflows/ci.yml`) runs lint, the suite on SQLite (Python 3.12 and 3.13) and
-PostgreSQL 16, real-model checks, browser tests, the deployment check and `pip-audit`.
+What the tests do and do not show:
 
-Physical checks that automated tests cannot cover:
+- The normal suite uses a fake face engine with synthetic images and Chromium's simulated camera.
+  It checks the software's rules, not recognition accuracy or real cameras.
+- The real-model tests only check that the models load and run correctly on synthetic input.
+- No test sends e-mail to a real provider.
 
-- real webcams on the target kiosk devices and browsers,
-- lighting and camera placement,
-- recognition error rates on consented local data.
+CI (`.github/workflows/ci.yml`) runs lint, the suite on SQLite and PostgreSQL, the browser,
+real-model and deployment checks, and a dependency audit.
 
-## Deployment
+Please keep changes small and covered by a test, run the commands above before opening a pull
+request, and never commit `.env`, databases, photos or exports.
 
-Production settings (`Project101.settings.prod`, the default for `wsgi.py`/`asgi.py`) force
-`DEBUG` off. They also enable HTTPS redirect, HSTS, secure cookies, CSP and
-Permissions-Policy headers.
+## Known limitations
 
-```bash
-export DJANGO_SETTINGS_MODULE=Project101.settings.prod   # plus the variables above
-pip install -r requirements.txt                          # or requirements-postgres.txt
-python manage.py migrate
-python manage.py collectstatic --noinput
-python manage.py setup_face_models
-python manage.py createsuperuser
-gunicorn Project101.wsgi:application --bind 127.0.0.1:8000 --workers 3 --timeout 30
-```
+- Recognition accuracy, false matches and missed matches have not been measured on real people;
+  the threshold is not calibrated for your cameras or students. There is no liveness check, so
+  staff must watch every match.
+- Real webcams, tablets and browsers other than Chromium have not been tested.
+- E-mail delivery to real inboxes has not been tested against a real provider, and SMTP can
+  occasionally deliver a message twice.
+- There are no courses, timetables or attendance percentages; schedules are per batch and per
+  day.
+- One attendance record per student per day (one check-in, one check-out).
+- The historical data exposure described at the top still needs the owner's action.
 
-**Reverse-proxy assumptions** (example for nginx):
+## Further reading
 
-```nginx
-server {
-    listen 443 ssl;
-    server_name attendance.example.edu;
-    # ssl_certificate ...; ssl_certificate_key ...;
-    client_max_body_size 6m;
-    location /static/ { alias /srv/attendance/staticfiles/; }
-    # Do NOT add any location for PRIVATE_MEDIA_ROOT or /media/.
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;   # overwrite, then DJANGO_TRUST_X_FORWARDED_PROTO=true
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-}
-```
-
-**Deployment notes:**
-
-- Each worker process loads the models once (about 40 MB of RAM) on its first recognition
-  request.
-- `KIOSK_MAX_CONCURRENT_ANALYSES` applies per process.
-- The gallery cache is per process and refreshes when the database changes.
-- Login throttling uses `REMOTE_ADDR`. Behind a proxy that is the proxy's address, so the
-  per-address limit is deliberately high; the per-username limit still applies.
-- Use the file cache (default in production, `DJANGO_CACHE_DIR`) on a single host. Use a
-  shared cache for several hosts.
-- Errors are logged to stderr without request bodies. Set `DJANGO_ADMIN_EMAILS` and an e-mail
-  backend, or forward the logs, to be alerted.
-
-## Backup and restore
-
-- **Back up:**
-  - the database (`db.sqlite3`, or `pg_dump` for PostgreSQL), and
-  - `PRIVATE_MEDIA_ROOT`.
-  Both contain personal data: encrypt backups, restrict access, and keep them only as long as
-  the retention policy allows.
-- **Not needed:** `var/models` (re-download with `setup_face_models`) and `staticfiles`
-  (re-run `collectstatic`).
-- **For SQLite,** back up with `sqlite3 db.sqlite3 ".backup backup.sqlite3"` (safe while
-  running) rather than copying the file.
-- **Restore** the database and the private media from the *same* point in time, then run
-  `python manage.py attendance_preflight` and `python manage.py rebuild_face_embeddings`.
-- **Deletions done after a backup** (consent withdrawals, removed students) reappear when you
-  restore it. Re-apply them from the audit log (`biometrics_removed`, `student_deleted`
-  events) after any restore.
-- Test restores regularly.
-
-## Performance
-
-**Measured** on a 4-vCPU cloud container (CPU only, Python 3.12, synthetic frames without real
-faces):
-
-| Operation | Time |
-|---|---|
-| Engine load, including SHA-256 check (once per process) | 0.27 s |
-| YuNet detection, 640×480 / 1280×720 / 1920×1080 frame (downscaled to 640) | 16.7 / 17.3 / 14.9 ms |
-| Alignment + SFace embedding, per face | 22.3 ms |
-| Gallery match vs 50 / 500 / 5,000 students | 0.03 / 0.12 / 1.3 ms |
-| Gallery signature check per frame (SQLite), 50 / 500 / 5,000 students | 1.1 / 1.4 / 6.0 ms |
-| Gallery rebuild after a change, 50 / 500 / 5,000 students | 4 / 8 / 71 ms |
-| Full kiosk request, 640×480 JPEG, no face (decode + detect + response) | 33 ms median, 38 ms p90 |
-
-**Estimates** (not measured end to end, because no real faces were used):
-
-- A frame with one face should take roughly 60 ms of server time (the request above plus one
-  embedding and a match).
-- Per-frame cost hardly depends on how many students are enrolled. 50, 500 and 5,000 students
-  are all practical on one CPU core per kiosk.
-- The browser sends at most one frame at a time, so throughput is limited by the network and
-  `KIOSK_MIN_FRAME_INTERVAL_SECONDS`.
-
-The old design re-encoded every enrolled student on every frame (≈ 8 s/frame at 50 students).
-
-Re-run the benchmark: `FACE_MODEL_DIR=var/models python scripts/benchmark_recognition.py`.
-
-## Upgrading from the previous version
-
-Follow [`docs/UPGRADING.md`](docs/UPGRADING.md). In short:
-
-1. Back up.
-2. Run `attendance_preflight` and resolve the blocking conflicts it lists. Nothing is merged
-   automatically.
-3. Run `migrate`.
-4. Run `relocate_legacy_photos --source media`.
-5. Re-record consent with a new photo for each student who should use recognition.
-6. Run `setup_face_models`.
-
-The audit findings and their fixes are mapped in
-[`docs/REMEDIATION_CHECKLIST.md`](docs/REMEDIATION_CHECKLIST.md).
-
-## Limitations
-
-- **Recognition:**
-  - accuracy, false-accept and false-reject rates are unmeasured, and the threshold is
-    uncalibrated;
-  - there is no liveness or anti-spoofing protection;
-  - there is no evaluation across lighting, cameras or demographics.
-- **Untested hardware and browsers:** real webcams, kiosk devices, and mobile Safari/Firefox
-  camera behaviour have not been tested; only Chromium's fake camera was used.
-- **No timetable data:** there are no courses or sessions, so no absence, lateness or
-  attendance percentages.
-- **Single-host defaults:** SQLite and the file cache. Use PostgreSQL and a shared cache to
-  scale out.
-- **History exposure still open:** the exposure of credentials and personal data in Git
-  history remains until the owner completes the incident runbook.
-
-## Project layout
-
-```
-Project101/settings/    base.py, dev.py, prod.py, test.py
-app1/models.py          Student, FaceEmbedding, Attendance, AuditEvent
-app1/recognition/       engine (lazy, OpenCV), model_files (pinned + checksums), gallery, service
-app1/services/          images (validation), attendance (transactions), students (lifecycle)
-app1/views/             auth, dashboard, students, attendance, kiosk, errors
-app1/management/        setup_face_models, rebuild_face_embeddings, attendance_preflight,
-                        relocate_legacy_photos, sync_roles
-app1/tests/             unit, integration, migration, concurrency, browser and real-model tests
-templates/, static/     base template, one stylesheet, kiosk.js, photo_capture.js
-docs/                   incident runbook, upgrade guide, remediation checklist, overview
-```
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): production setup, HTTPS, health checks, upgrades and
+  rollback.
+- [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md): e-mail setup, the worker, the digest and
+  troubleshooting.
+- [docs/OPERATIONS.md](docs/OPERATIONS.md): backups, restore drills and data retention.
+- [docs/UPGRADING.md](docs/UPGRADING.md): upgrading a database from the original version.
+- [docs/REMEDIATION_CHECKLIST.md](docs/REMEDIATION_CHECKLIST.md): audit findings and how they
+  were addressed.
+- [docs/DESIGN.md](docs/DESIGN.md): interface direction and credits.
+- [docs/INCIDENT_CLEANUP_RUNBOOK.md](docs/INCIDENT_CLEANUP_RUNBOOK.md): owner-only cleanup of the
+  historical exposure.

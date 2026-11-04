@@ -77,3 +77,23 @@ Test files are in `app1/tests/`.
   compute them correctly.
 - No unsupervised automatic attendance: without liveness detection, a person must confirm each match.
 - No course/session management platform (out of scope).
+
+## Follow-up: operations, notifications and deployment
+
+Built on top of the remediation above without replacing any of it.
+
+| Area | Change | Tests |
+|---|---|---|
+| Instructor scope | Instructors only see students who are in their assigned batches on the date in question. This applies to lists, detail pages, photos, kiosk matches, manual entries, corrections, exports, reports and audit history. Out-of-scope records return 404 | `test_operations.ManualTransitionTests`, `AdminScreensTests` |
+| Manual attendance | Search, today's status, explicit Check in / Check out with a required reason, routed through the same `record_event` as the kiosk. Past entries are a separate, flagged flow | `test_operations`, `test_browser` |
+| Unfinished days | Earlier days without a check-out are listed until the real time is entered or the record is marked reviewed. No time is invented | `test_operations.StatusRuleTests` |
+| Schedules and statuses | Effective-dated rosters and schedules, holidays and leave. Without a schedule, nothing is called late or absent | `test_operations.StatusRuleTests` |
+| Notifications | Transactional outbox; a database-backed worker with SKIP LOCKED claims, backoff, crash recovery and cancellation; verified recipients only; daily digest de-duplicated per address per day | `test_notifications` (SQLite and PostgreSQL) |
+| Rate limits across processes | Production uses the database cache, so login throttling, kiosk and test-e-mail limits hold across gunicorn workers | `deploy/smoke-test.sh` |
+| Deployment | Dockerfile, Compose (PostgreSQL, gunicorn, worker, scheduler, Caddy HTTPS, Mailpit), health and readiness endpoints, backup and restore scripts, and a CI end-to-end test | `deploy/smoke-test.sh`, CI `deployment` job |
+
+Still open:
+
+- the historical data exposure (owner actions in the runbook);
+- uncalibrated recognition accuracy and no liveness check;
+- untested real cameras and mail providers.

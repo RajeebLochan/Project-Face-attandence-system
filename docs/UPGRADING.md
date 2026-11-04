@@ -113,3 +113,17 @@ python manage.py attendance_preflight        # should report no conflicts
 ```
 
 Then assign staff to the **Attendance admin** or **Instructor** group in `/admin/`.
+
+## Upgrading to the release with batches and notifications (migration 0016)
+
+- Run `migrate` as usual; there are no new blocking constraints. Existing students get an
+  `enrolled_on` date equal to the earlier of their creation date and their first attendance, so
+  past days are not reported as "not enrolled".
+- Production settings now use the database cache. Run `python manage.py createcachetable` once
+  (the container `migrate` command does this).
+- Batches are optional. Until you create them and assign students:
+  - instructors see no students;
+  - nothing is reported late or absent.
+  Assign instructors to batches on the *Staff* page.
+- E-mail notifications stay off until you configure SMTP, complete *Settings* and verify
+  recipients (see [NOTIFICATIONS.md](NOTIFICATIONS.md)).

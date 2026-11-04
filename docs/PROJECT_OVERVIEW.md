@@ -50,8 +50,11 @@ Main modules:
 | `app1/models.py` | `Student`, `FaceEmbedding`, `Attendance`, `AuditEvent` |
 | `app1/recognition/` | Lazy face engine, pinned model files, embedding gallery, identification |
 | `app1/services/` | Image validation, attendance recording, student lifecycle (photo, consent, deletion) |
-| `app1/views/` | Auth, dashboard, students, attendance, kiosk, error pages |
-| `app1/management/commands/` | `setup_face_models`, `rebuild_face_embeddings`, `attendance_preflight`, `relocate_legacy_photos`, `sync_roles` |
+| `app1/views/` | Auth, dashboard, students, attendance, reports, kiosk, notifications, administration, error pages |
+| `app1/notifications/` | Outbox enqueueing, recipient rules, delivery worker, daily digest, address verification |
+| `app1/scope.py` | Which students and records each staff member may see (batch assignments) |
+| `deploy/`, `Dockerfile`, `docker-compose.yml` | Production deployment with PostgreSQL, gunicorn, worker, scheduler and Caddy |
+| `app1/management/commands/` | `setup_face_models`, `rebuild_face_embeddings`, `attendance_preflight`, `relocate_legacy_photos`, `sync_roles`, `run_notification_worker`, `send_daily_digest` |
 | `templates/`, `static/app1/` | One base template, one stylesheet, kiosk and photo-capture scripts |
 
 ## Technology
