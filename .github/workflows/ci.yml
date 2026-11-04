@@ -115,6 +115,23 @@ jobs:
           fi
           grep -q "DJANGO_SECRET_KEY must be set" err.txt
 
+  deployment:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose file
+        run: |
+          printf 'SITE_ADDRESS=localhost\nPOSTGRES_PASSWORD=x\n' > ci.env
+          ENV_FILE=ci.env docker compose --env-file ci.env --profile mailtest config --quiet
+      - name: Build image
+        run: docker build -t attendance-app:local .
+      - name: Check the image contains no secrets, databases or model files
+        run: |
+          docker run --rm --entrypoint sh attendance-app:local -c \
+            'id -u | grep -qx 10001 && ! test -e /app/.env && ! find /app /data -name "*.sqlite3" -o -name "*.onnx" | grep -q .'
+      - name: End-to-end smoke test (HTTPS proxy, worker, mail catcher, backup/restore)
+        run: sh deploy/smoke-test.sh
+
   security-audit:
     runs-on: ubuntu-24.04
     steps:
