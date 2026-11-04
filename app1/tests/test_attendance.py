@@ -2,7 +2,8 @@
 import datetime as dt
 from unittest import mock
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -133,11 +134,11 @@ class ManualAndCorrectionTests(AppTestCase):
     def test_manual_entry_requires_reason_and_is_audited(self):
         today = timezone.localdate()
         data = {"student": self.student.pk, "mode": "check_in", "date": today.isoformat(), "time": "00:01"}
-        response = self.client.post(reverse("attendance-manual"), data)
+        response = self.client.post(reverse("attendance-manual-past"), data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Attendance.objects.count(), 0)
         data["reason"] = "Camera not working"
-        response = self.client.post(reverse("attendance-manual"), data)
+        response = self.client.post(reverse("attendance-manual-past"), data)
         self.assertRedirects(response, reverse("student_attendance_list"))
         record = Attendance.objects.get()
         self.assertEqual(record.date, today)
@@ -146,7 +147,7 @@ class ManualAndCorrectionTests(AppTestCase):
 
     def test_manual_entry_rejects_future(self):
         tomorrow = timezone.localdate() + dt.timedelta(days=1)
-        response = self.client.post(reverse("attendance-manual"), {
+        response = self.client.post(reverse("attendance-manual-past"), {
             "student": self.student.pk, "mode": "check_in", "date": tomorrow.isoformat(),
             "time": "09:00", "reason": "future test",
         })
@@ -208,21 +209,36 @@ class ReportTests(AppTestCase):
         self.assertContains(response, "must be on or before")
 
     def test_filters_and_query_count_do_not_grow_with_rows(self):
-        students = [make_student(name=f"Student {i}", embedding=False) for i in range(30)]
-        for i, student in enumerate(students):
-            Attendance.objects.create(student=student, date=dt.date(2025, 1, 1 + i % 3))
         url = reverse("student_attendance_list")
-        response = self.client.get(url, {"date_from": "2025-01-02", "date_to": "2025-01-02"})
-        self.assertEqual(response.context["page"].paginator.count, 10)
-        # session + user + permissions (groups) + count + page rows, independent of row count.
-        with self.assertNumQueries(6):
+
+        def add(count, offset):
+            for i in range(count):
+                student = make_student(name=f"Student {offset + i}", embedding=False)
+                Attendance.objects.create(student=student, date=dt.date(2025, 1, 1 + (offset + i) % 3))
+
+        add(5, 0)
+        self.client.get(url)  # warm-up: creates the settings row once
+        with CaptureQueriesContext(connection) as small:
             self.client.get(url)
+        add(30, 5)
+        with CaptureQueriesContext(connection) as large:
+            self.client.get(url)
+        self.assertEqual(len(small), len(large))
+        response = self.client.get(url, {"date_from": "2025-01-02", "date_to": "2025-01-02"})
+        self.assertEqual(response.context["page"].paginator.count, 12)
 
     def test_student_list_query_count_is_constant(self):
-        for i in range(30):
+        url = reverse("student-list")
+        for i in range(3):
             make_student(name=f"Student {i}", embedding=False)
-        with self.assertNumQueries(6):
-            response = self.client.get(reverse("student-list"))
+        self.client.get(url)  # warm-up: creates the settings row once
+        with CaptureQueriesContext(connection) as small:
+            self.client.get(url)
+        for i in range(30):
+            make_student(name=f"More {i}", embedding=False)
+        with CaptureQueriesContext(connection) as large:
+            response = self.client.get(url)
+        self.assertEqual(len(small), len(large))
         self.assertEqual(len(response.context["page"].object_list), 25)
 
     def test_csv_export_escapes_formulas(self):

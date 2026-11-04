@@ -16,7 +16,7 @@ from app1.recognition.engine import ModelUnavailable, reset_engine
 from app1.recognition.gallery import gallery
 
 from .fakes import FakeFaceEngine, one_face
-from .helpers import GREEN, RED, make_student, make_user, solid
+from .helpers import GREEN, RED, default_batch, make_student, make_user, solid
 
 try:
     from playwright.sync_api import expect, sync_playwright
@@ -61,6 +61,7 @@ class KioskBrowserTests(StaticLiveServerTestCase):
         gallery.invalidate()
         self.student = make_student(name="Browser Student", colour=RED)
         user = make_user("kiosk-browser", group="Instructor")
+        default_batch().instructors.add(user)
         self.client.force_login(user)
         self.context = self.browser.new_context(base_url=self.live_server_url)
         self.context.add_cookies([{
@@ -157,13 +158,36 @@ class KioskBrowserTests(StaticLiveServerTestCase):
         for i in range(30):
             Attendance.objects.create(student=make_student(name=f"Long Student Name Number {i}", embedding=False),
                                       date="2025-01-01")
-        for path in ("/", "/kiosk/", "/students/", "/students/attendance/", f"/students/{self.student.pk}/"):
+        for path in ("/", "/kiosk/", "/students/", "/students/attendance/", f"/students/{self.student.pk}/",
+                     "/reports/", "/reports/register/", "/attendance/manual/?q=Long&student=1", "/leave/"):
             with self.subTest(path=path):
                 self.page.goto(path)
                 overflow = self.page.evaluate(
                     "document.documentElement.scrollWidth - document.documentElement.clientWidth"
                 )
                 self.assertLessEqual(overflow, 0)
+
+    def test_manual_attendance_flow_in_browser(self):
+        self.page.goto("/attendance/manual/")
+        self.page.fill("#q", "Browser")
+        self.page.keyboard.press("Enter")
+        self.page.click("text=Browser Student")
+        self.page.fill("#reason-in", "Camera unavailable")
+        self.page.click("text=Check in now")
+        expect(self.page.locator(".messages")).to_contain_text("Check-in recorded")
+        expect(self.page.locator("text=Check in now")).to_be_disabled()
+        expect(self.page.locator("text=Check out now")).to_be_enabled()
+        self.assertEqual(Attendance.objects.filter(student=self.student).count(), 1)
+
+    def test_keyboard_navigation(self):
+        self.page.goto("/")
+        self.page.keyboard.press("Tab")
+        focused = self.page.evaluate("document.activeElement.textContent.trim()")
+        self.assertEqual(focused, "Skip to content")
+        self.page.keyboard.press("Enter")
+        self.page.keyboard.press("Tab")
+        outline = self.page.evaluate("getComputedStyle(document.activeElement).outlineStyle")
+        self.assertNotEqual(outline, "none")
 
     def test_pages_have_labels_and_no_csp_violations(self):
         violations = []
@@ -172,7 +196,8 @@ class KioskBrowserTests(StaticLiveServerTestCase):
                 violations.append(message.text)
 
         self.page.on("console", collect)
-        for path in ("/", "/kiosk/", "/students/", "/students/attendance/", "/attendance/manual/"):
+        for path in ("/", "/kiosk/", "/students/", "/students/attendance/", "/attendance/manual/", "/reports/",
+                     "/reports/register/", "/batches/", "/leave/", "/audit/"):
             self.page.goto(path)
             unlabeled = self.page.evaluate("""() => [...document.querySelectorAll('input, select, textarea')]
                 .filter(el => el.type !== 'hidden' && !el.labels?.length && !el.closest('label')

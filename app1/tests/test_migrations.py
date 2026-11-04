@@ -65,6 +65,17 @@ class UpgradeFrom0013Tests(TransactionTestCase):
         table_names = connection.introspection.table_names()
         self.assertNotIn("app1_cameraconfiguration", table_names)
 
+    def test_enrolled_on_backfill_keeps_past_attendance_on_the_register(self):
+        Attendance = self.old_apps.get_model("app1", "Attendance")
+        student = self.old_student("OLD-9")  # the old schema has no created_at
+        Attendance.objects.create(student=student, date=dt.date(2025, 2, 1))
+        self.migrate_to_latest()
+        from app1.models import Student as NewStudent
+
+        upgraded = NewStudent.objects.get(pk=student.pk)
+        self.assertEqual(upgraded.enrolled_on, dt.date(2025, 2, 1))
+        self.assertTrue(upgraded.is_active_on(dt.date(2025, 2, 1)))
+
     def test_duplicate_registration_numbers_block_the_upgrade_without_changing_data(self):
         first = self.old_student("SAME")
         second = self.old_student("SAME", name="Another Student")

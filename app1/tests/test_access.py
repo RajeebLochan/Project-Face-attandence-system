@@ -76,7 +76,7 @@ class AccessMatrixTests(AppTestCase):
         self.assert_statuses({name: 200 for name in self.pages})
 
     def test_photo_requires_specific_permission(self):
-        self.login(make_user("viewer", perms=["app1.view_student"]))
+        self.login(make_user("viewer", perms=["app1.view_student", "app1.view_all_batches"]))
         self.assertEqual(self.client.get(self.pages["detail"]).status_code, 200)
         self.assertEqual(self.client.get(self.pages["photo"]).status_code, 403)
 
