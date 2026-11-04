@@ -1,0 +1,20 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["app1/migrations/0001_initial.py", "app1/migrations/000[2-9]_*.py", "app1/migrations/001[0-3]_*.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "DJ"]
+ignore = [
+  "S101",  # assert in tests / scripts
+  "S105",  # test placeholder passwords
+  "S106",
+  "S311",  # non-crypto randomness in tests
+  "S603",  # subprocess in tests with fixed arguments
+  "DJ001",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"Project101/settings/*.py" = ["F403", "F405"]
+"app1/tests/*.py" = ["S"]
+"scripts/*.py" = ["E402"]

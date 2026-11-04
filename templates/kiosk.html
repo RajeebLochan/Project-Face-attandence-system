@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Kiosk{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Recognition kiosk</h1>
+    <p class="muted">One person at a time. You confirm every match before attendance is recorded.</p>
+  </div>
+  {% if perms.app1.add_attendance %}<a class="btn" href="{% url 'attendance-manual' %}">Manual attendance</a>{% endif %}
+</div>
+
+<div id="kiosk" class="two-col"
+     data-recognize-url="{% url 'kiosk-recognize' %}"
+     data-confirm-url="{% url 'kiosk-confirm' %}"
+     data-csrf-token="{{ csrf_token }}"
+     data-min-interval-ms="{{ min_interval_ms }}"
+     data-max-frame-bytes="{{ max_frame_bytes }}">
+  <section class="card stack">
+    <div class="camera">
+      <video id="kiosk-video" playsinline muted hidden></video>
+      <div class="placeholder" id="kiosk-placeholder">Camera is off.</div>
+    </div>
+    <div class="filters">
+      <div class="field">
+        <label for="kiosk-camera">Camera</label>
+        <select id="kiosk-camera" disabled><option value="">Default camera</option></select>
+      </div>
+      <fieldset class="field">
+        <legend>Mode</legend>
+        <ul class="radio-list">
+          {% for value, label in modes %}<li><label><input type="radio" name="kiosk-mode" value="{{ value }}"{% if forloop.first %} checked{% endif %}> {{ label }}</label></li>{% endfor %}
+        </ul>
+      </fieldset>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" id="kiosk-start">Start</button>
+      <button type="button" class="btn" id="kiosk-stop" disabled>Stop</button>
+    </div>
+  </section>
+
+  <section class="stack">
+    <div id="kiosk-status" class="status" role="status" aria-live="polite" data-tone="">Press Start to turn on the camera.</div>
+    <div id="kiosk-candidate" class="card" hidden>
+      <h2>Is this the person in front of the camera?</h2>
+      <div class="candidate">
+        <img id="candidate-photo" class="photo" alt="Enrolment photo of the proposed student" hidden>
+        <dl class="details">
+          <dt>Name</dt><dd id="candidate-name"></dd>
+          <dt>Registration no.</dt><dd id="candidate-reg" class="mono"></dd>
+          <dt>Branch / year</dt><dd id="candidate-class"></dd>
+          <dt>Today</dt><dd id="candidate-today"></dd>
+          <dt>Match distance</dt><dd><span id="candidate-distance" class="tabular"></span> <span class="muted">(lower is closer; limit <span id="candidate-threshold"></span>; not a probability)</span></dd>
+        </dl>
+      </div>
+      <div class="actions mt-2">
+        <button type="button" class="btn btn-primary" id="candidate-confirm"></button>
+        <button type="button" class="btn" id="candidate-reject">Not this person</button>
+      </div>
+    </div>
+    <p class="muted">The camera image is analysed on the server and discarded; frames are not stored. Matching cannot detect photos or screens held up to the camera — stay with the kiosk.</p>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'app1/kiosk.js' %}" defer></script>{% endblock %}

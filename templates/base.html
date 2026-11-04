@@ -1,0 +1,44 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Attendance{% endblock %} · Attendance</title>
+  <link rel="stylesheet" href="{% static 'app1/app.css' %}">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="inner">
+      <a class="brand" href="{% url 'home' %}">Attendance</a>
+      {% if user.is_authenticated %}
+      <nav aria-label="Main">
+        <ul class="nav">
+          <li><a href="{% url 'home' %}"{% if nav_section == 'home' %} aria-current="page"{% endif %}>Dashboard</a></li>
+          {% if perms.app1.use_kiosk %}<li><a href="{% url 'kiosk' %}"{% if nav_section == 'kiosk' %} aria-current="page"{% endif %}>Kiosk</a></li>{% endif %}
+          {% if perms.app1.view_student %}<li><a href="{% url 'student-list' %}"{% if nav_section == 'students' %} aria-current="page"{% endif %}>Students</a></li>{% endif %}
+          {% if perms.app1.view_attendance %}<li><a href="{% url 'student_attendance_list' %}"{% if nav_section == 'attendance' %} aria-current="page"{% endif %}>Attendance</a></li>{% endif %}
+          {% if perms.app1.view_auditevent %}<li><a href="{% url 'audit-log' %}"{% if nav_section == 'audit' %} aria-current="page"{% endif %}>Audit log</a></li>{% endif %}
+        </ul>
+      </nav>
+      <div class="user-menu">
+        <span class="muted">{{ user.get_username }}</span>
+        <form method="post" action="{% url 'logout' %}" class="inline">
+          {% csrf_token %}
+          <button class="btn-link" type="submit">Log out</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+  <main id="main">
+    {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}<li class="alert alert-{{ message.tags|default:'info' }}" role="status">{{ message }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

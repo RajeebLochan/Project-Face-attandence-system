@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ student.name }}{% endblock %}
+{% block content %}
+<h1>Edit details</h1>
+{% include "includes/form_errors.html" %}
+<form method="post" class="card form" novalidate>
+  {% csrf_token %}
+  {% for field in form %}{% include "includes/field.html" %}{% endfor %}
+  <div class="actions">
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn" href="{% url 'student-detail' student.pk %}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

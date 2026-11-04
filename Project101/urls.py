@@ -10,3 +10,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("app1.urls")),
 ]
+
+handler403 = "app1.views.errors.permission_denied"
+handler404 = "app1.views.errors.page_not_found"
+handler500 = "app1.views.errors.server_error"

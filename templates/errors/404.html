@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Not found{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Page not found</h1>
+  <p>The page or record does not exist, or it has been removed.</p>
+  <p><a href="{% url 'home' %}">Back to the dashboard</a></p>
+</div>
+{% endblock %}

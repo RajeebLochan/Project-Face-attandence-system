@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Correct attendance{% endblock %}
+{% block content %}
+<h1>Correct attendance</h1>
+<p><strong>{{ attendance.student.name }}</strong> <span class="mono muted">{{ attendance.student.registration_number }}</span> on {{ attendance.date|date:"l j F Y" }}</p>
+{% include "includes/form_errors.html" %}
+<form method="post" class="card form" novalidate>
+  {% csrf_token %}
+  {% for field in form %}{% include "includes/field.html" %}{% endfor %}
+  <p class="muted">Leave a time empty to clear it.</p>
+  <div class="actions">
+    <button class="btn btn-primary" type="submit">Save correction</button>
+    <a class="btn" href="{% url 'student_attendance_list' %}">Cancel</a>
+  </div>
+</form>
+<section class="mt-2">
+  <h2>History of this record</h2>
+  {% if history %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">When</th><th scope="col">Action</th><th scope="col">Source</th><th scope="col">By</th><th scope="col">Reason</th></tr></thead>
+      <tbody>
+        {% for event in history %}
+        <tr><td class="tabular">{{ event.created_at|date:"j M Y H:i" }}</td><td>{{ event.get_action_display }}</td><td>{{ event.get_source_display }}</td><td>{{ event.actor.get_username|default:"—" }}</td><td>{{ event.reason|default:"—" }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<div class="card empty-state">No logged events for this record (it may predate the audit log).</div>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Attendance{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Attendance</h1>
+  <div class="actions">
+    {% if perms.app1.add_attendance %}<a class="btn btn-primary" href="{% url 'attendance-manual' %}">Manual attendance</a>{% endif %}
+    <a class="btn" href="{% url 'attendance-export' %}{% if query %}?{{ query }}{% endif %}">Export CSV</a>
+  </div>
+</div>
+<form method="get" class="filters" role="search" novalidate>
+  {% include "includes/field.html" with field=form.q %}
+  {% include "includes/field.html" with field=form.date_from %}
+  {% include "includes/field.html" with field=form.date_to %}
+  <button class="btn" type="submit">Filter</button>
+</form>
+{% include "includes/form_errors.html" %}
+{% if page.object_list %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th scope="col">Date</th><th scope="col">Student</th><th scope="col">Registration no.</th><th scope="col">Check-in</th><th scope="col">Check-out</th><th scope="col">Duration</th>{% if perms.app1.change_attendance %}<th scope="col"><span class="visually-hidden">Actions</span></th>{% endif %}</tr>
+    </thead>
+    <tbody>
+      {% for record in page.object_list %}
+      <tr>
+        <td class="tabular">{{ record.date|date:"D j M Y" }}</td>
+        <td>{% if perms.app1.view_student %}<a href="{% url 'student-detail' record.student_id %}">{{ record.student.name }}</a>{% else %}{{ record.student.name }}{% endif %}</td>
+        <td class="mono">{{ record.student.registration_number }}</td>
+        <td class="tabular">{{ record.check_in_time|time:"H:i:s"|default:"—" }}</td>
+        <td class="tabular">{{ record.check_out_time|time:"H:i:s"|default:"—" }}</td>
+        <td class="tabular">{{ record.calculate_duration|default:"—" }}</td>
+        {% if perms.app1.change_attendance %}<td><a href="{% url 'attendance-correct' record.pk %}">Correct<span class="visually-hidden"> record for {{ record.student.name }} on {{ record.date }}</span></a></td>{% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "includes/pagination.html" %}
+{% else %}
+<div class="card empty-state">{% if form.is_bound %}No attendance matches these filters.{% else %}No attendance has been recorded yet.{% endif %}</div>
+{% endif %}
+<p class="muted mt-1">Times are shown in the {{ time_zone }} time zone. Absence and lateness are not calculated because the system has no timetable.</p>
+{% endblock %}

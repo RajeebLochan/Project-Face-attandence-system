@@ -1,33 +1,42 @@
+"""Read-only admin views.
+
+Enrolment, photos, authorisation, consent and attendance changes go through the app's
+own views so that they are validated and audited. Face templates are not registered.
+"""
 from django.contrib import admin
-from .models import Student, Attendance,CameraConfiguration
+
+from .models import Attendance, AuditEvent, Student
+
+
+class ReadOnlyAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(Student)
-class StudentAdmin(admin.ModelAdmin):
-    list_display = ['name', 'email', 'registration_number', 'branch', 'authorized', 'year']
-    list_filter = ['branch', 'authorized']
-    search_fields = ['name', 'email']
+class StudentAdmin(ReadOnlyAdmin):
+    list_display = ["id", "name", "registration_number", "branch", "year", "authorized", "consent_status"]
+    list_filter = ["branch", "year", "authorized", "consent_status"]
+    search_fields = ["name", "registration_number"]
+    exclude = ["image"]
+
 
 @admin.register(Attendance)
-class AttendanceAdmin(admin.ModelAdmin):
-    list_display = ['student', 'date', 'check_in_time', 'check_out_time']
-    list_filter = ['date']
-    search_fields = ['student__name']
-
-    def get_readonly_fields(self, request, obj=None):
-        if obj:  # Editing an existing object
-            return ['student', 'date', 'check_in_time', 'check_out_time']
-        else:  # Adding a new object
-            return ['date', 'check_in_time', 'check_out_time']
-
-    def save_model(self, request, obj, form, change):
-        if change:  # Editing an existing object
-            # Ensure check-in and check-out times cannot be modified via admin
-            obj.check_in_time = Attendance.objects.get(id=obj.id).check_in_time
-            obj.check_out_time = Attendance.objects.get(id=obj.id).check_out_time
-        super().save_model(request, obj, form, change)
+class AttendanceAdmin(ReadOnlyAdmin):
+    list_display = ["id", "student", "date", "check_in_time", "check_out_time"]
+    list_filter = ["date"]
+    search_fields = ["student__name", "student__registration_number"]
+    list_select_related = ["student"]
 
 
-@admin.register(CameraConfiguration)
-class CameraConfigurationAdmin(admin.ModelAdmin):
-    list_display = ['name', 'camera_source', 'threshold']
-    search_fields = ['name']
+@admin.register(AuditEvent)
+class AuditEventAdmin(ReadOnlyAdmin):
+    list_display = ["created_at", "action", "source", "actor", "student", "attendance"]
+    list_filter = ["action", "source"]
+    list_select_related = ["actor", "student", "attendance"]

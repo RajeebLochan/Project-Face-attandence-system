@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Manual attendance{% endblock %}
+{% block content %}
+<h1>Manual attendance</h1>
+<p class="muted">For students who are not enrolled for recognition, have withdrawn consent, or were not recognised. Every manual entry is logged with your name and reason.</p>
+{% include "includes/form_errors.html" %}
+<form method="post" class="card form" novalidate>
+  {% csrf_token %}
+  {% for field in form %}{% include "includes/field.html" %}{% endfor %}
+  <div class="actions">
+    <button class="btn btn-primary" type="submit">Record</button>
+    <a class="btn" href="{% url 'student_attendance_list' %}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

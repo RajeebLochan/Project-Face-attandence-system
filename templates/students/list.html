@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Students{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Students</h1>
+  {% if perms.app1.add_student %}<a class="btn btn-primary" href="{% url 'student-enroll' %}">Enrol student</a>{% endif %}
+</div>
+<form method="get" class="filters" role="search">
+  {% include "includes/field.html" with field=form.q %}
+  {% include "includes/field.html" with field=form.branch %}
+  {% include "includes/field.html" with field=form.year %}
+  {% include "includes/field.html" with field=form.status %}
+  <button class="btn" type="submit">Filter</button>
+</form>
+{% if page.object_list %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th scope="col">Name</th><th scope="col">Registration no.</th><th scope="col">Branch</th><th scope="col">Year</th><th scope="col">Consent</th><th scope="col">Recognition</th></tr>
+    </thead>
+    <tbody>
+      {% for student in page.object_list %}
+      <tr>
+        <td><a href="{% url 'student-detail' student.pk %}">{{ student.name }}</a></td>
+        <td class="mono">{{ student.registration_number }}</td>
+        <td>{{ student.branch }}</td>
+        <td>{{ student.get_year_display }}</td>
+        <td>{% include "students/_consent_badge.html" %}</td>
+        <td>{% if student.authorized %}<span class="badge badge-success">Authorized</span>{% elif student.has_consent and student.image %}<span class="badge badge-warning">Awaiting review</span>{% else %}<span class="badge">Not eligible</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "includes/pagination.html" %}
+{% else %}
+<div class="card empty-state">
+  {% if form.is_bound %}No students match these filters.{% else %}No students have been enrolled yet.{% endif %}
+  {% if perms.app1.add_student and not form.is_bound %}<p class="mt-1"><a href="{% url 'student-enroll' %}">Enrol the first student</a></p>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

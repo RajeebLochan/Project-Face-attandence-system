@@ -27,4 +27,5 @@ if DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":
 
 LOGGING = {"version": 1, "disable_existing_loggers": False,
            "handlers": {"null": {"class": "logging.NullHandler"}},
-           "root": {"handlers": ["null"], "level": "CRITICAL"}}
+           "root": {"handlers": ["null"], "level": "CRITICAL"},
+           "loggers": {"django": {"handlers": ["null"], "propagate": False}}}

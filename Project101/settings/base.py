@@ -137,7 +137,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "app1",
+    "app1.apps.App1Config",
 ]
 
 MIDDLEWARE = [
@@ -148,6 +148,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "app1.middleware.SecurityHeadersMiddleware",
 ]
 
 ROOT_URLCONF = "Project101.urls"
@@ -162,6 +163,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "app1.context_processors.navigation",
             ],
         },
     },

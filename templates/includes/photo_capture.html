@@ -1,0 +1,18 @@
+{# Camera capture with a plain file-input fallback. The captured JPEG is placed in the form's file input. #}
+<div class="field{% if field.errors %} field-invalid{% endif %}" data-photo-capture>
+  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+  <div class="camera" aria-live="polite">
+    <video data-video playsinline muted hidden></video>
+    <img data-preview alt="Captured photo preview" hidden>
+    <div class="placeholder" data-placeholder>Start the camera, or choose a JPEG/PNG file below.</div>
+  </div>
+  <div class="actions mt-1">
+    <button type="button" class="btn" data-start>Start camera</button>
+    <button type="button" class="btn btn-primary" data-capture hidden>Capture</button>
+    <button type="button" class="btn" data-retake hidden>Retake</button>
+  </div>
+  <p class="help" data-camera-status role="status"></p>
+  {{ field }}
+  {% if field.help_text %}<div class="help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</div>{% endif %}
+  {{ field.errors }}
+</div>

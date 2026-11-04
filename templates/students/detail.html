@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ student.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ student.name }}</h1>
+    <p class="muted mono">{{ student.registration_number }}</p>
+  </div>
+  <div class="actions">
+    {% if perms.app1.authorize_student %}<a class="btn btn-primary" href="{% url 'student-authorize' student.pk %}">Review authorization</a>{% endif %}
+    {% if perms.app1.change_student %}
+      <a class="btn" href="{% url 'student-edit' student.pk %}">Edit details</a>
+      <a class="btn" href="{% url 'student-photo-replace' student.pk %}">{% if student.image %}Replace photo{% else %}Add photo{% endif %}</a>
+    {% endif %}
+    {% if perms.app1.add_attendance %}<a class="btn" href="{% url 'attendance-manual' %}?student={{ student.pk }}">Manual attendance</a>{% endif %}
+  </div>
+</div>
+
+<div class="two-col">
+  <section class="card">
+    <h2>Details</h2>
+    <dl class="details">
+      <dt>E-mail</dt><dd>{{ student.email }}</dd>
+      <dt>Branch</dt><dd>{{ student.get_branch_display }}</dd>
+      <dt>Year</dt><dd>{{ student.get_year_display }}</dd>
+      <dt>Consent</dt><dd>{% include "students/_consent_badge.html" %}{% if student.consent_recorded_at %} <span class="muted">{{ student.consent_recorded_at|date:"j M Y H:i" }}{% if student.consent_notice_version %} · notice v{{ student.consent_notice_version }}{% endif %}</span>{% endif %}</dd>
+      <dt>Recognition</dt><dd>{% if student.authorized %}<span class="badge badge-success">Authorized</span> <span class="muted">{{ student.authorized_at|date:"j M Y H:i" }}</span>{% else %}<span class="badge">Not authorized</span>{% endif %}</dd>
+      <dt>Enrolled</dt><dd>{{ student.created_at|date:"j M Y" }}</dd>
+    </dl>
+  </section>
+  <section class="card">
+    <h2>Enrolment photo</h2>
+    {% if not student.image %}
+      <p class="muted">No photo is stored.</p>
+    {% elif perms.app1.view_student_photo %}
+      <img class="photo" src="{% url 'student-photo' student.pk %}" alt="Enrolment photo of {{ student.name }}">
+    {% else %}
+      <p class="muted">A photo is stored. You do not have permission to view it.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="mt-2">
+  <h2>Recent attendance</h2>
+  {% if attendance %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Date</th><th scope="col">Check-in</th><th scope="col">Check-out</th><th scope="col">Duration</th></tr></thead>
+      <tbody>
+        {% for record in attendance %}
+        <tr><td class="tabular">{{ record.date|date:"D j M Y" }}</td><td class="tabular">{{ record.check_in_time|time:"H:i"|default:"—" }}</td><td class="tabular">{{ record.check_out_time|time:"H:i"|default:"—" }}</td><td class="tabular">{{ record.calculate_duration|default:"—" }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card empty-state">No attendance recorded yet.</div>
+  {% endif %}
+</section>
+
+{% if events is not None %}
+<section class="mt-2">
+  <h2>Audit history</h2>
+  {% if events %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">When</th><th scope="col">Action</th><th scope="col">By</th><th scope="col">Reason</th></tr></thead>
+      <tbody>
+        {% for event in events %}
+        <tr><td class="tabular">{{ event.created_at|date:"j M Y H:i" }}</td><td>{{ event.get_action_display }}</td><td>{{ event.actor.get_username|default:"—" }}</td><td>{{ event.reason|default:"—" }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<div class="card empty-state">No events.</div>{% endif %}
+</section>
+{% endif %}
+
+{% if perms.app1.change_student or perms.app1.delete_student %}
+<section class="card mt-2">
+  <h2>Data removal</h2>
+  <div class="actions">
+    {% if perms.app1.change_student and student.image or perms.app1.change_student and student.consent_status == "given" %}
+      <a class="btn" href="{% url 'student-remove-biometrics' student.pk %}">Remove biometric data (withdraw consent)</a>
+    {% endif %}
+    {% if perms.app1.delete_student %}<a class="btn btn-danger" href="{% url 'student-delete' student.pk %}">Delete student</a>{% endif %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

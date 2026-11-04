@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Delete student{% endblock %}
+{% block content %}
+<div class="card form">
+  <h1>Delete student</h1>
+  {% if attendance_count %}
+    <p><strong>{{ student.name }}</strong> has {{ attendance_count }} attendance record{{ attendance_count|pluralize }}. Records are kept as institutional history, so this student cannot be deleted.</p>
+    <p>To erase their face data, use <a href="{% url 'student-remove-biometrics' student.pk %}">Remove biometric data</a>.</p>
+    <a class="btn" href="{% url 'student-detail' student.pk %}">Back</a>
+  {% else %}
+    <p>This permanently deletes <strong>{{ student.name }}</strong>, their photo and face template.</p>
+    <form method="post" class="actions">
+      {% csrf_token %}
+      <button class="btn btn-danger" type="submit">Delete student</button>
+      <a class="btn" href="{% url 'student-detail' student.pk %}">Cancel</a>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

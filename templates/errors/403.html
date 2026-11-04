@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Access denied{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Access denied</h1>
+  <p>Your account does not have permission to open this page. If you need access, ask an attendance administrator to add you to the right group.</p>
+  <p><a href="{% url 'home' %}">Back to the dashboard</a></p>
+</div>
+{% endblock %}

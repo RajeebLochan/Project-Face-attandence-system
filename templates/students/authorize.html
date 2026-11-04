@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Authorize {{ student.name }}{% endblock %}
+{% block content %}
+<h1>Review authorization</h1>
+<div class="two-col">
+  <section class="card">
+    <h2>Enrolment photo</h2>
+    {% if student.image %}
+      <img class="photo" src="{% url 'student-photo' student.pk %}" alt="Enrolment photo of {{ student.name }}">
+      <p class="muted mt-1">Check that this is clearly the named student, alone, facing the camera.</p>
+    {% else %}
+      <p class="muted">No photo is stored, so this student cannot be authorized.</p>
+    {% endif %}
+  </section>
+  <section class="card">
+    <h2>{{ student.name }}</h2>
+    <dl class="details">
+      <dt>Registration no.</dt><dd class="mono">{{ student.registration_number }}</dd>
+      <dt>Branch / year</dt><dd>{{ student.get_branch_display }}, {{ student.get_year_display }}</dd>
+      <dt>Consent</dt><dd>{% include "students/_consent_badge.html" %}{% if student.consent_notice_version %} <span class="muted">notice v{{ student.consent_notice_version }}</span>{% endif %}</dd>
+      <dt>Currently</dt><dd>{% if student.authorized %}<span class="badge badge-success">Authorized</span>{% else %}<span class="badge">Not authorized</span>{% endif %}</dd>
+    </dl>
+    {% include "includes/form_errors.html" %}
+    <form method="post" class="mt-2" novalidate>
+      {% csrf_token %}
+      {% include "includes/field.html" with field=form.decision %}
+      <div class="actions">
+        <button class="btn btn-primary" type="submit">Save decision</button>
+        <a class="btn" href="{% url 'student-detail' student.pk %}">Cancel</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

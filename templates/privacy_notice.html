@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Privacy notice{% endblock %}
+{% block content %}
+<div class="card stack">
+  <h1>Face recognition privacy notice</h1>
+  <p class="muted">Version {{ privacy_notice_version }}. <strong>Template:</strong> the institution must review and complete this notice (data controller, contact, legal basis, retention period) before collecting any photos. Staff record consent against this version number.</p>
+  <h2>What we collect</h2>
+  <p>Your name, e-mail address, registration number, branch, year, one enrolment photo of your face, and a numerical face template derived from it. When you use the attendance kiosk we record your check-in and check-out times. Camera frames are analysed and immediately discarded; they are not stored.</p>
+  <h2>Why</h2>
+  <p>Only to record attendance. A staff member confirms every recognition before attendance is recorded.</p>
+  <h2>Your choice</h2>
+  <p>Face recognition is optional. If you do not consent, or later withdraw consent, staff record your attendance manually. Withdrawing consent deletes your photo and face template; your attendance history is kept as an institutional record.</p>
+  <h2>Who can see it</h2>
+  <p>Only authorised attendance staff. Photos are never published or shared.</p>
+  <h2>Retention</h2>
+  <p>[Institution to complete: how long photos, templates and attendance records are kept, and how they are deleted.]</p>
+  <h2>Contact</h2>
+  <p>[Institution to complete: data protection contact.]</p>
+</div>
+{% endblock %}
