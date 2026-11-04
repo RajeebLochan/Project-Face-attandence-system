@@ -6,7 +6,8 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Project101.settings')
+    default = "Project101.settings.test" if sys.argv[1:2] == ["test"] else "Project101.settings.dev"
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", default)
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
@@ -18,5 +19,5 @@ def main():
     execute_from_command_line(sys.argv)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
