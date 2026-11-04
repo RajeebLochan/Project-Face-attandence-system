@@ -1,1 +1,51 @@
-/venv
+# --- Secrets and local configuration -------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- Personal / biometric data: never commit ------------------------------
+# Databases contain student records, consent records and face embeddings.
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+# Enrolment photos and any legacy public media directory.
+media/
+private_media/
+# Runtime data (private media, model files, file cache) lives under var/.
+var/
+# Exported reports and backups may contain personal data.
+*.csv
+backups/
+*.docx
+
+# --- Python build artifacts ------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Virtual environments --------------------------------------------------
+/venv/
+/.venv/
+/env/
+venv*/
+
+# --- Django ----------------------------------------------------------------
+staticfiles/
+
+# --- Model weights (provisioned with `manage.py setup_face_models`) --------
+*.onnx
+
+# --- Editors / OS ----------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

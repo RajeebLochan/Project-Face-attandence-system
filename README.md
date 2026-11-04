@@ -57,10 +57,16 @@ python manage.py runserver
 💡 Linux Users: No additional C++ setup is required.
 
 
-🔑 Admin Login Credentials
+## Administrator account
 
-Username: TeamRajeeb
+No credentials are shipped with this project. Create your own administrator after
+running migrations:
 
-Password: Sai@2025
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+```
 
-Log in to the Django admin dashboard using the above credentials to manage student data, view attendance reports, and authorize students.
+> Security notice: earlier versions of this repository published an administrator
+> password, the Django secret key and personal data. See
+> [`docs/INCIDENT_CLEANUP_RUNBOOK.md`](docs/INCIDENT_CLEANUP_RUNBOOK.md).
