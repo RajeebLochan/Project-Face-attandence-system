@@ -14,7 +14,7 @@ Reverse-proxy assumptions (see README "Deployment"):
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *  # noqa: F403
-from .base import BASE_DIR, env, env_bool, env_int, env_list, env_path
+from .base import DEFAULT_FROM_EMAIL, EMAIL_BACKEND, EMAIL_HOST, SITE_URL, env, env_bool, env_int, env_list
 
 DEBUG = False
 
@@ -39,19 +39,27 @@ if env_bool("DJANGO_TRUST_X_FORWARDED_PROTO", False):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", True)
+# Container health checks talk to gunicorn directly over plain HTTP.
+SECURE_REDIRECT_EXEMPT = [r"^healthz$", r"^readyz$"]
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = env_int("DJANGO_SECURE_HSTS_SECONDS", 31536000, minimum=0)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", True)
 SECURE_HSTS_PRELOAD = env_bool("DJANGO_SECURE_HSTS_PRELOAD", False)
 
-# Shared on-disk cache so login throttling and kiosk rate limits apply across all
-# worker processes on one host. Use a shared cache (database/Redis) for multiple hosts.
+# Database-backed cache, shared by every web worker and container, so login throttling,
+# kiosk and test-e-mail rate limits hold across processes. Create the table with
+# `python manage.py createcachetable` (the container entrypoint does this).
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
-        "LOCATION": str(env_path("DJANGO_CACHE_DIR", BASE_DIR / "var" / "cache")),
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "django_cache",
     }
 }
+
+if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend" and EMAIL_HOST and not DEFAULT_FROM_EMAIL:
+    raise ImproperlyConfigured("Set DEFAULT_FROM_EMAIL when EMAIL_HOST is configured.")
+if SITE_URL and not SITE_URL.startswith("https://"):
+    raise ImproperlyConfigured("SITE_URL must start with https:// in production.")
 
 ADMINS = [("Administrator", addr) for addr in env_list("DJANGO_ADMIN_EMAILS")]

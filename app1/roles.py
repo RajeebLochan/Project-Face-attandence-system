@@ -4,6 +4,7 @@ Assign people to these groups in the Django admin (Users -> Groups). Superusers 
 every permission. Do not edit these groups' permissions in the admin: they are reset
 to the lists below on the next migration (``manage.py sync_roles`` does the same).
 """
+
 ADMIN_GROUP = "Attendance admin"
 INSTRUCTOR_GROUP = "Instructor"
 
@@ -20,6 +21,16 @@ ROLE_PERMISSIONS = {
         "app1.change_attendance",
         "app1.use_kiosk",
         "app1.view_auditevent",
+        "app1.import_students",
+        "app1.view_all_batches",
+        "app1.manage_batches",
+        "app1.view_batch",
+        "app1.view_leave",
+        "app1.add_leave",
+        "app1.change_leave",
+        "app1.manage_settings",
+        "app1.manage_staff",
+        "app1.manage_notifications",
     ],
     INSTRUCTOR_GROUP: [
         "app1.view_student",
@@ -29,6 +40,9 @@ ROLE_PERMISSIONS = {
         "app1.add_attendance",
         "app1.change_attendance",
         "app1.use_kiosk",
+        # Instructors only see students in the batches they are assigned to.
+        "app1.view_batch",
+        "app1.view_leave",
     ],
 }
 
@@ -45,9 +59,7 @@ def sync_roles(apps=None, **kwargs):
         permissions = []
         for dotted in codenames:
             app_label, codename = dotted.split(".")
-            permission = Permission.objects.filter(
-                content_type__app_label=app_label, codename=codename
-            ).first()
+            permission = Permission.objects.filter(content_type__app_label=app_label, codename=codename).first()
             if permission is None:
                 raise RuntimeError(f"Permission {dotted} does not exist; run migrations first.")
             permissions.append(permission)

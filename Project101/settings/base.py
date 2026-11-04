@@ -267,6 +267,33 @@ KIOSK_MIN_FRAME_INTERVAL_SECONDS = env_float("KIOSK_MIN_FRAME_INTERVAL_SECONDS",
 KIOSK_MAX_CONCURRENT_ANALYSES = env_int("KIOSK_MAX_CONCURRENT_ANALYSES", 1, minimum=1, maximum=16)
 KIOSK_CANDIDATE_MAX_AGE_SECONDS = env_int("KIOSK_CANDIDATE_MAX_AGE_SECONDS", 120, minimum=10)
 
+# --- E-mail ---------------------------------------------------------------
+# Attendance e-mails are written to an outbox table and sent by a separate worker
+# (`python manage.py run_notification_worker`). Credentials only come from the environment.
+EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST", "")
+EMAIL_PORT = env_int("EMAIL_PORT", 587, minimum=1, maximum=65535)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
+if EMAIL_USE_TLS and EMAIL_USE_SSL:
+    raise ImproperlyConfigured("Set only one of EMAIL_USE_TLS (STARTTLS, port 587) or EMAIL_USE_SSL (port 465).")
+EMAIL_TIMEOUT = env_int("EMAIL_TIMEOUT", 15, minimum=1, maximum=120)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "")
+SERVER_EMAIL = env("SERVER_EMAIL", DEFAULT_FROM_EMAIL or "root@localhost")
+EMAIL_SUBJECT_PREFIX = "[Attendance] "
+# Public base URL used for links in e-mails (verification links, staff links to records).
+SITE_URL = env("SITE_URL", "").rstrip("/")
+
+NOTIFICATION_MAX_ATTEMPTS = env_int("NOTIFICATION_MAX_ATTEMPTS", 5, minimum=1, maximum=20)
+# A job left in "processing" longer than this (worker crashed) is requeued.
+NOTIFICATION_LEASE_SECONDS = env_int("NOTIFICATION_LEASE_SECONDS", 300, minimum=30)
+NOTIFICATION_WORKER_POLL_SECONDS = env_int("NOTIFICATION_WORKER_POLL_SECONDS", 5, minimum=1, maximum=300)
+TEST_EMAIL_INTERVAL_SECONDS = env_int("TEST_EMAIL_INTERVAL_SECONDS", 60, minimum=1)
+# Manual entries this many minutes before "now" are treated as past (backdated) entries.
+BACKDATED_ENTRY_MINUTES = env_int("BACKDATED_ENTRY_MINUTES", 15, minimum=1)
+
 # Version of the institution's privacy notice that staff confirm consent against.
 PRIVACY_NOTICE_VERSION = env("PRIVACY_NOTICE_VERSION", "1.0")
 

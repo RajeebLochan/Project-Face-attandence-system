@@ -18,6 +18,9 @@ FACE_MODEL_DIR = _TMP / "models"
 FACE_ENGINE = "app1.tests.fakes.FakeFaceEngine"
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+DEFAULT_FROM_EMAIL = "attendance@example.test"
+SITE_URL = "https://attendance.example.test"
 KIOSK_MIN_FRAME_INTERVAL_SECONDS = 0.0
 
 if DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":

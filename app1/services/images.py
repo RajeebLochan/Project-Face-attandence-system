@@ -1,4 +1,5 @@
 """Strict decoding of untrusted images (enrolment photos and kiosk frames)."""
+
 from io import BytesIO
 
 import numpy as np

@@ -3,6 +3,7 @@
 File-system side effects are tied to the database transaction: new files are removed
 again if the transaction fails, and old files are deleted only after it commits.
 """
+
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
@@ -170,8 +171,7 @@ def delete_student(student, *, actor):
         records = locked.attendance_set.count()
         if records:
             raise StudentStateError(
-                f"This student has {records} attendance record(s), which are kept. "
-                "Use “Remove biometric data” instead."
+                f"This student has {records} attendance record(s), which are kept. Use “Remove biometric data” instead."
             )
         old_name = locked.image.name
         student_id = locked.pk
