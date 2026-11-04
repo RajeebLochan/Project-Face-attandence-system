@@ -40,6 +40,7 @@
     today: document.getElementById("candidate-today"),
     distance: document.getElementById("candidate-distance"),
     threshold: document.getElementById("candidate-threshold"),
+    now: document.getElementById("candidate-now"),
     confirm: document.getElementById("candidate-confirm"),
     reject: document.getElementById("candidate-reject"),
   };
@@ -282,6 +283,7 @@
     el.today.textContent = parts.length ? parts.join(", ") : "nothing recorded yet";
     el.distance.textContent = Number(candidate.distance).toFixed(3);
     el.threshold.textContent = Number(candidate.threshold).toFixed(3);
+    if (el.now) el.now.textContent = candidate.server_time || "";
     if (candidate.photo_url) {
       el.photo.src = candidate.photo_url;
       el.photo.hidden = false;

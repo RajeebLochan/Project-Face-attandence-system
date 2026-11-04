@@ -1,14 +1,16 @@
 {% with widget_type=field.widget_type %}
 <div class="field{% if field.errors %} field-invalid{% endif %}">
   {% if widget_type == "checkbox" %}
-    <div class="checkbox">{{ field }}<label for="{{ field.id_for_label }}">{{ field.label }}</label></div>
-  {% elif widget_type == "radioselect" %}
+    <label class="check" for="{{ field.id_for_label }}">{{ field }}<span>{{ field.label }}</span></label>
+  {% elif widget_type == "radioselect" or widget_type == "checkboxselectmultiple" %}
     <fieldset>
       <legend>{{ field.label }}</legend>
-      <ul class="radio-list">
-        {% for radio in field %}<li><label for="{{ radio.id_for_label }}">{{ radio.tag }} {{ radio.choice_label }}</label></li>{% endfor %}
+      <ul class="choice-list">
+        {% for choice in field %}<li><label for="{{ choice.id_for_label }}">{{ choice.tag }} {{ choice.choice_label }}</label></li>{% empty %}<li class="muted">None available</li>{% endfor %}
       </ul>
     </fieldset>
+  {% elif widget_type == "hidden" %}
+    {{ field }}
   {% else %}
     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
     {{ field }}

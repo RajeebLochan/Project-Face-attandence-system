@@ -1,19 +1,20 @@
 {% extends "base.html" %}
 {% block title %}Log in{% endblock %}
 {% block content %}
-<div class="auth-box card">
+<div class="panel">
   <h1>Log in</h1>
-  <p class="muted">Staff accounts only. Ask an administrator if you need access.</p>
-  {% if locked_out %}
-  <div class="alert alert-error" role="alert">Too many failed attempts. Wait 15 minutes and try again.</div>
-  {% endif %}
+  <p class="secondary">For staff who record and review attendance.</p>
+  {% if locked_out %}<div class="notice notice-error" role="alert">Too many failed attempts. Wait 15 minutes, then try again.</div>{% endif %}
   {% include "includes/form_errors.html" %}
   <form method="post" novalidate>
     {% csrf_token %}
     {% include "includes/field.html" with field=form.username %}
     {% include "includes/field.html" with field=form.password %}
     <input type="hidden" name="next" value="{{ next }}">
-    <button class="btn btn-primary" type="submit">Log in</button>
+    <div class="actions">
+      <button class="btn btn-primary btn-large" type="submit">Log in</button>
+      <a href="{% url 'password_reset' %}">Forgot password</a>
+    </div>
   </form>
 </div>
 {% endblock %}

@@ -5,6 +5,7 @@ a server camera, starts threads, shows windows or plays sound. A recognised face
 produces a *candidate*: a staff member confirms it, and the confirmation carries a
 server-signed token, so a client can never assert a student ID or a match by itself.
 """
+
 import math
 import threading
 from functools import wraps
@@ -17,6 +18,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
+from .. import scope
 from ..forms import KioskFrameForm
 from ..models import Attendance, AuditEvent, Student
 from ..recognition.engine import ModelUnavailable
@@ -64,18 +66,30 @@ def api_permission(codename):
     return decorator
 
 
-def _eligible_students():
-    return Student.objects.filter(authorized=True, consent_status=Student.Consent.GIVEN).exclude(image="")
+def _eligible_students(user=None):
+    """Recognition needs authorisation + consent + photo, the student must be on the
+    register today, and an instructor only sees students in their own batches."""
+    today = timezone.localdate()
+    students = scope.students_for(user) if user is not None else Student.objects.all()
+    return (
+        students.filter(authorized=True, consent_status=Student.Consent.GIVEN, enrolled_on__lte=today)
+        .exclude(image="")
+        .exclude(left_on__lte=today)
+    )
 
 
 @perm("app1.use_kiosk")
 @require_GET
 def kiosk(request):
-    return render(request, "kiosk.html", {
-        "modes": MODES.items(),
-        "min_interval_ms": int(settings.KIOSK_MIN_FRAME_INTERVAL_SECONDS * 1000),
-        "max_frame_bytes": settings.KIOSK_FRAME_MAX_BYTES,
-    })
+    return render(
+        request,
+        "kiosk.html",
+        {
+            "modes": MODES.items(),
+            "min_interval_ms": int(settings.KIOSK_MIN_FRAME_INTERVAL_SECONDS * 1000),
+            "max_frame_bytes": settings.KIOSK_FRAME_MAX_BYTES,
+        },
+    )
 
 
 @require_POST
@@ -105,20 +119,22 @@ def kiosk_recognize(request):
     try:
         result = identify(image)
     except ModelUnavailable:
-        return _json("model_unavailable", 503,
-                     message="Face recognition is not available on this server. Use manual attendance.")
+        return _json(
+            "model_unavailable", 503, message="Face recognition is not available on this server. Use manual attendance."
+        )
     finally:
         slots.release()
 
     if result.status in MESSAGES:
         return _json("unsuitable", reason=result.status, message=MESSAGES[result.status])
     if result.status == "ambiguous":
-        return _json("ambiguous", message="No confident match (two enrolled students are too similar). "
-                                          "Use manual attendance.")
+        return _json(
+            "ambiguous", message="No confident match (two enrolled students are too similar). Use manual attendance."
+        )
     if result.status != "match":
         return _json("unknown", message="Not recognised. If this person is enrolled, use manual attendance.")
 
-    student = _eligible_students().filter(pk=result.match.student_id).first()
+    student = _eligible_students(request.user).filter(pk=result.match.student_id).first()
     if student is None:  # eligibility changed between caching and now
         return _json("unknown", message="Not recognised. If this person is enrolled, use manual attendance.")
 
@@ -141,6 +157,7 @@ def kiosk_recognize(request):
             "photo_url": reverse("student-photo", args=[student.pk]) if can_view_photo else None,
             "distance": distance,
             "threshold": settings.FACE_MATCH_THRESHOLD,
+            "server_time": timezone.localtime().strftime("%H:%M"),
             "checked_in_at": _clock(today.check_in_time) if today else None,
             "checked_out_at": _clock(today.check_out_time) if today else None,
         },
@@ -156,7 +173,8 @@ def _clock(value):
 def kiosk_confirm(request):
     try:
         data = signing.loads(
-            request.POST.get("token", ""), salt=TOKEN_SALT,
+            request.POST.get("token", ""),
+            salt=TOKEN_SALT,
             max_age=settings.KIOSK_CANDIDATE_MAX_AGE_SECONDS,
         )
     except signing.SignatureExpired:
@@ -166,14 +184,16 @@ def kiosk_confirm(request):
     if data.get("user") != request.user.pk or data.get("mode") not in MODES:
         return _json("invalid_token", 400, message="Invalid confirmation.")
 
-    student = _eligible_students().filter(pk=data.get("student")).first()
+    student = _eligible_students(request.user).filter(pk=data.get("student")).first()
     if student is None:
         return _json("not_eligible", 409, message="This student is no longer authorized for recognition.")
     try:
         outcome = record_event(
-            student, data["mode"], actor=request.user, source=AuditEvent.Source.KIOSK,
-            details={"match_distance": data.get("distance"),
-                     "match_threshold": settings.FACE_MATCH_THRESHOLD},
+            student,
+            data["mode"],
+            actor=request.user,
+            source=AuditEvent.Source.KIOSK,
+            details={"match_distance": data.get("distance"), "match_threshold": settings.FACE_MATCH_THRESHOLD},
         )
     except AttendanceError as exc:
         return _json(exc.code, 409, message=exc.message)

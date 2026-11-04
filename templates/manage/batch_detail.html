@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ batch.name }}{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{% url 'batch-list' %}">Batches</a></div>
+<div class="page-head">
+  <div><h1>{{ batch.name }}</h1><p class="sub"><span class="mono">{{ batch.code }}</span> · {{ members|length }} student{{ members|length|pluralize }} today{% if not batch.is_active %} · inactive{% endif %}</p></div>
+  <div class="actions">{% if perms.app1.view_attendance %}<a class="btn" href="{% url 'register-day' %}?batch={{ batch.pk }}">Today’s register</a>{% endif %}{% if perms.app1.manage_batches %}<a class="btn" href="{% url 'batch-edit' batch.pk %}">Edit batch</a>{% endif %}</div>
+</div>
+<div class="split">
+  <section aria-labelledby="roster-title">
+    <div class="section-head"><h2 id="roster-title">Roster today</h2><span class="meta">Move students from their own page</span></div>
+    {% if members %}
+    <div class="table-wrap"><table>
+      <thead><tr><th scope="col">Student</th><th scope="col">In batch since</th></tr></thead>
+      <tbody>{% for m in members %}<tr><td><a class="row-link" href="{% url 'student-detail' m.student_id %}">{{ m.student.name }}</a><span class="sub mono">{{ m.student.registration_number }}</span></td><td class="num secondary">{{ m.start_date|date:"j M Y" }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<div class="panel empty">Nobody is in this batch today. Assign students from their page or with CSV import.</div>{% endif %}
+    {% if upcoming %}<p class="help mt-2">Joining later: {% for m in upcoming %}{{ m.student.name }} ({{ m.start_date|date:"j M" }}){% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+  </section>
+  <div class="stack">
+    <section class="panel" aria-labelledby="schedule-title">
+      <h2 id="schedule-title">Schedule</h2>
+      {% if current %}<p class="mt-1">{{ current.weekday_labels }} · <span class="stamp">{{ current.start_time|time:"H:i" }}</span> <span class="secondary small">grace {{ current.grace_minutes }} min</span></p>{% else %}<p class="muted mt-1">No schedule yet, so nobody in this batch is marked late or absent.</p>{% endif %}
+      {% if schedules %}<ul class="result-list mt-1">{% for s in schedules %}<li><a><span class="small">From {{ s.effective_from|date:"j M Y" }}</span><span class="small secondary">{{ s.weekday_labels }}, {{ s.start_time|time:"H:i" }} +{{ s.grace_minutes }}</span></a></li>{% endfor %}</ul>{% endif %}
+      {% if perms.app1.manage_batches %}
+      <form method="post" action="{% url 'schedule-add' batch.pk %}" class="mt-2" novalidate data-once>
+        {% csrf_token %}
+        <h3>New schedule</h3>
+        <div class="mt-1">{% for field in schedule_form %}{% include "includes/field.html" %}{% endfor %}</div>
+        <button class="btn" type="submit">Save schedule</button>
+        <p class="help">It applies from the chosen date; earlier days keep the schedule that applied then.</p>
+      </form>
+      {% endif %}
+    </section>
+    <section class="panel" aria-labelledby="hol-title">
+      <h2 id="hol-title">Upcoming holidays</h2>
+      {% if holidays %}<ul class="result-list mt-1">{% for h in holidays %}<li><a><span class="small">{{ h.name }}</span><span class="small secondary num">{{ h.date|date:"D j M" }}{% if not h.batch_id %} · all{% endif %}</span></a></li>{% endfor %}</ul>{% else %}<p class="muted small mt-1">None. Add holidays on the <a href="{% url 'batch-list' %}">batches page</a>.</p>{% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

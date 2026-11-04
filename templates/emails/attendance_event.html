@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>{{ event_label }}</title></head>
+<body style="margin:0;padding:24px;background:#fafafa;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#171717;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:12px;">
+    <tr><td style="padding:24px;">
+      <p style="margin:0 0 16px;font-size:13px;color:#6b6b6b;">{{ institution.name }}</p>
+      <p style="margin:0 0 16px;font-size:18px;line-height:1.4;">{% if kind == "correction" %}An attendance record was updated by staff.{% else %}{{ event_label }} recorded{% if manual %} manually by staff{% endif %}.{% endif %}</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="font-size:15px;line-height:1.6;">
+        <tr><td style="color:#6b6b6b;padding-right:16px;">Student</td><td>{{ student.name }}</td></tr>
+        <tr><td style="color:#6b6b6b;padding-right:16px;">Registration no.</td><td style="font-family:Menlo,Consolas,monospace;">{{ student.registration_number }}</td></tr>
+        {% if kind == "correction" and after %}
+        <tr><td style="color:#6b6b6b;padding-right:16px;">Date</td><td>{{ attendance.date|date:"l j F Y" }}</td></tr>
+        <tr><td style="color:#6b6b6b;padding-right:16px;">Check-in</td><td>{% if after.check_in_time %}{{ after.check_in_time.time }} ({{ after.check_in_time.zone }}){% else %}not recorded{% endif %}</td></tr>
+        <tr><td style="color:#6b6b6b;padding-right:16px;">Check-out</td><td>{% if after.check_out_time %}{{ after.check_out_time.time }} ({{ after.check_out_time.zone }}){% else %}not recorded{% endif %}</td></tr>
+        {% elif moment %}
+        <tr><td style="color:#6b6b6b;padding-right:16px;">Date</td><td>{{ moment.date }}</td></tr>
+        <tr><td style="color:#6b6b6b;padding-right:16px;">Time</td><td><span style="font-family:Menlo,Consolas,monospace;border:1px solid #d4d4d4;border-radius:4px;padding:1px 6px;">{{ moment.time }}</span> <span style="color:#6b6b6b;">{{ moment.zone }}</span></td></tr>
+        {% if past_entry %}<tr><td style="color:#6b6b6b;padding-right:16px;">Entered</td><td>later by staff, {{ recorded.date }} at {{ recorded.time }}</td></tr>{% endif %}
+        {% endif %}
+      </table>
+      <p style="margin:20px 0 0;font-size:14px;color:#525252;">If this looks wrong, contact <a href="mailto:{{ institution.contact_email }}" style="color:#2b4c8c;">{{ institution.contact_email }}</a>{% if institution.contact_phone %} or {{ institution.contact_phone }}{% endif %}.</p>
+      {% if record_url %}<p style="margin:12px 0 0;font-size:14px;"><a href="{{ record_url }}" style="color:#2b4c8c;">Open the record</a> <span style="color:#6b6b6b;">(staff login required)</span></p>{% endif %}
+    </td></tr>
+  </table>
+</body></html>

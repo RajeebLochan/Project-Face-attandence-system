@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Attendance{% endblock %}
+{% load attendance_tags %}
+{% block title %}Attendance log{% endblock %}
 {% block content %}
 <div class="page-head">
-  <h1>Attendance</h1>
+  <div><h1>Attendance log</h1><p class="sub">Every recorded check-in and check-out, newest first</p></div>
   <div class="actions">
-    {% if perms.app1.add_attendance %}<a class="btn btn-primary" href="{% url 'attendance-manual' %}">Manual attendance</a>{% endif %}
     <a class="btn" href="{% url 'attendance-export' %}{% if query %}?{{ query }}{% endif %}">Export CSV</a>
+    {% if perms.app1.add_attendance %}<a class="btn" href="{% url 'attendance-manual-past' %}">Record a past entry</a>{% endif %}
   </div>
 </div>
 <form method="get" class="filters" role="search" novalidate>
@@ -18,18 +19,15 @@
 {% if page.object_list %}
 <div class="table-wrap">
   <table>
-    <thead>
-      <tr><th scope="col">Date</th><th scope="col">Student</th><th scope="col">Registration no.</th><th scope="col">Check-in</th><th scope="col">Check-out</th><th scope="col">Duration</th>{% if perms.app1.change_attendance %}<th scope="col"><span class="visually-hidden">Actions</span></th>{% endif %}</tr>
-    </thead>
+    <thead><tr><th scope="col">Date</th><th scope="col">Student</th><th scope="col">In</th><th scope="col">Out</th><th scope="col">Duration</th>{% if perms.app1.change_attendance %}<th scope="col"><span class="visually-hidden">Actions</span></th>{% endif %}</tr></thead>
     <tbody>
       {% for record in page.object_list %}
       <tr>
-        <td class="tabular">{{ record.date|date:"D j M Y" }}</td>
-        <td>{% if perms.app1.view_student %}<a href="{% url 'student-detail' record.student_id %}">{{ record.student.name }}</a>{% else %}{{ record.student.name }}{% endif %}</td>
-        <td class="mono">{{ record.student.registration_number }}</td>
-        <td class="tabular">{{ record.check_in_time|time:"H:i:s"|default:"—" }}</td>
-        <td class="tabular">{{ record.check_out_time|time:"H:i:s"|default:"—" }}</td>
-        <td class="tabular">{{ record.calculate_duration|default:"—" }}</td>
+        <td class="num">{{ record.date|weekday_day }} <span class="sub">{{ record.date|date:"Y" }}</span></td>
+        <td>{% if perms.app1.view_student %}<a class="row-link" href="{% url 'student-detail' record.student_id %}">{{ record.student.name }}</a>{% else %}{{ record.student.name }}{% endif %}<span class="sub mono">{{ record.student.registration_number }}</span></td>
+        <td>{{ record.check_in_time|stamp }}</td>
+        <td>{{ record.check_out_time|stamp }}{% if record.check_in_time and not record.check_out_time and record.date < today %} <span class="tag tag-warn">not recorded</span>{% endif %}</td>
+        <td class="num">{{ record.calculate_duration|default:"—" }}</td>
         {% if perms.app1.change_attendance %}<td><a href="{% url 'attendance-correct' record.pk %}">Correct<span class="visually-hidden"> record for {{ record.student.name }} on {{ record.date }}</span></a></td>{% endif %}
       </tr>
       {% endfor %}
@@ -38,7 +36,7 @@
 </div>
 {% include "includes/pagination.html" %}
 {% else %}
-<div class="card empty-state">{% if form.is_bound %}No attendance matches these filters.{% else %}No attendance has been recorded yet.{% endif %}</div>
+<div class="panel empty">{% if form.is_bound %}No attendance matches these filters.{% else %}No attendance recorded yet.{% endif %}</div>
 {% endif %}
-<p class="muted mt-1">Times are shown in the {{ time_zone }} time zone. Absence and lateness are not calculated because the system has no timetable.</p>
+<p class="help mt-2">Times are in {{ time_zone }}. Statuses such as late or absent are on the <a href="{% url 'reports' %}">Reports</a> page.</p>
 {% endblock %}

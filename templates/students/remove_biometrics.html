@@ -1,17 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Remove biometric data{% endblock %}
 {% block content %}
-<div class="card form">
+<div class="breadcrumb"><a href="{% url 'student-detail' student.pk %}">{{ student.name }}</a></div>
+<div class="panel form">
   <h1>Remove biometric data</h1>
-  <p>This permanently deletes <strong>{{ student.name }}</strong>’s enrolment photo and face template, revokes recognition, and records consent as withdrawn. Attendance history is kept. Use manual attendance for this student afterwards.</p>
+  <p class="mt-2">This permanently deletes {{ student.name }}’s enrolment photo and face template, switches off recognition and records consent as withdrawn. Attendance history stays. Record their attendance manually from now on.</p>
   {% include "includes/form_errors.html" %}
-  <form method="post" novalidate>
+  <form method="post" novalidate data-once>
     {% csrf_token %}
     {% include "includes/field.html" with field=form.reason %}
-    <div class="actions">
-      <button class="btn btn-danger" type="submit">Delete photo and template</button>
-      <a class="btn" href="{% url 'student-detail' student.pk %}">Cancel</a>
-    </div>
+    <div class="actions"><button class="btn btn-danger" type="submit">Delete photo and template</button><a class="btn" href="{% url 'student-detail' student.pk %}">Cancel</a></div>
   </form>
 </div>
 {% endblock %}

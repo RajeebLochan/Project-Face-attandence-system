@@ -1,0 +1,9 @@
+{% autoescape off %}{{ institution.name|default:"Attendance" }}
+
+Hello {{ name }},
+
+Please confirm this address for attendance notifications{% if student %} about {{ student.name }}{% endif %}:
+{{ link }}
+
+The link works for {{ valid_days }} days. If you did not expect this message, ignore it; nothing will be sent to this address.
+{% endautoescape %}

@@ -2,31 +2,39 @@
 {% block title %}Students{% endblock %}
 {% block content %}
 <div class="page-head">
-  <h1>Students</h1>
-  {% if perms.app1.add_student %}<a class="btn btn-primary" href="{% url 'student-enroll' %}">Enrol student</a>{% endif %}
+  <div>
+    <h1>Students</h1>
+    <p class="sub">{% if perms.app1.view_all_batches %}Everyone on the register{% else %}Students in your batches{% endif %}</p>
+  </div>
+  <div class="actions">
+    {% if perms.app1.add_student %}<a class="btn btn-primary" href="{% url 'student-enroll' %}">Enrol student</a>{% endif %}
+    {% if perms.app1.import_students %}<a class="btn" href="{% url 'student-import' %}">Import CSV</a>{% endif %}
+  </div>
 </div>
 <form method="get" class="filters" role="search">
   {% include "includes/field.html" with field=form.q %}
   {% include "includes/field.html" with field=form.branch %}
   {% include "includes/field.html" with field=form.year %}
   {% include "includes/field.html" with field=form.status %}
+  <input type="hidden" name="show" value="{{ show }}">
   <button class="btn" type="submit">Filter</button>
 </form>
-{% if page.object_list %}
-<div class="table-wrap">
+<div class="segmented mt-1" role="group" aria-label="Register status">
+  <a href="?show=active" {% if show == "active" %}aria-current="true"{% endif %}>On the register</a>
+  <a href="?show=left" {% if show == "left" %}aria-current="true"{% endif %}>Left</a>
+  <a href="?show=all" {% if show == "all" %}aria-current="true"{% endif %}>All</a>
+</div>
+{% if rows %}
+<div class="table-wrap mt-2">
   <table>
-    <thead>
-      <tr><th scope="col">Name</th><th scope="col">Registration no.</th><th scope="col">Branch</th><th scope="col">Year</th><th scope="col">Consent</th><th scope="col">Recognition</th></tr>
-    </thead>
+    <thead><tr><th scope="col">Name</th><th scope="col">Batch</th><th scope="col">Branch, year</th><th scope="col">Face recognition</th></tr></thead>
     <tbody>
-      {% for student in page.object_list %}
+      {% for student, batch in rows %}
       <tr>
-        <td><a href="{% url 'student-detail' student.pk %}">{{ student.name }}</a></td>
-        <td class="mono">{{ student.registration_number }}</td>
-        <td>{{ student.branch }}</td>
-        <td>{{ student.get_year_display }}</td>
-        <td>{% include "students/_consent_badge.html" %}</td>
-        <td>{% if student.authorized %}<span class="badge badge-success">Authorized</span>{% elif student.has_consent and student.image %}<span class="badge badge-warning">Awaiting review</span>{% else %}<span class="badge">Not eligible</span>{% endif %}</td>
+        <td><a class="row-link" href="{% url 'student-detail' student.pk %}">{{ student.name }}</a><span class="sub mono">{{ student.registration_number }}</span></td>
+        <td>{% if batch %}{{ batch.name }}{% else %}<span class="muted">No batch</span>{% endif %}</td>
+        <td class="secondary">{{ student.branch }}, {{ student.get_year_display }}</td>
+        <td>{% if student.authorized %}<span class="status status-present"><span class="dot"></span>Authorised</span>{% elif student.has_consent and student.image %}<span class="status status-late"><span class="dot"></span>Photo waiting for review</span>{% elif student.consent_status == "withdrawn" %}<span class="muted">Declined or withdrawn; manual only</span>{% else %}<span class="muted">Manual attendance only</span>{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -34,9 +42,9 @@
 </div>
 {% include "includes/pagination.html" %}
 {% else %}
-<div class="card empty-state">
-  {% if form.is_bound %}No students match these filters.{% else %}No students have been enrolled yet.{% endif %}
-  {% if perms.app1.add_student and not form.is_bound %}<p class="mt-1"><a href="{% url 'student-enroll' %}">Enrol the first student</a></p>{% endif %}
+<div class="panel empty mt-2">
+  {% if form.is_bound %}No students match these filters.{% else %}No students yet.{% endif %}
+  {% if perms.app1.add_student and not form.is_bound %}<p><a href="{% url 'student-enroll' %}">Enrol the first student</a> or <a href="{% url 'student-import' %}">import a CSV</a>.</p>{% endif %}
 </div>
 {% endif %}
 {% endblock %}

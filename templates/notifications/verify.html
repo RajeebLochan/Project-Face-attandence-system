@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Confirm e-mail address{% endblock %}
+{% block content %}
+<div class="panel">
+  {% if error %}
+  <h1>Link not valid</h1>
+  <p class="mt-2">{{ error }}</p>
+  {% elif done %}
+  <h1>Address confirmed</h1>
+  <p class="mt-2">{{ address }} can now receive attendance e-mails, if they are switched on. To stop them, contact the institution.</p>
+  {% else %}
+  <h1>Confirm e-mail address</h1>
+  <p class="mt-2">Confirm that <strong>{{ address }}</strong> should receive attendance notifications{% if institution.name %} from {{ institution.name }}{% endif %}.</p>
+  <form method="post" data-once>{% csrf_token %}<button class="btn btn-primary btn-large" type="submit">Confirm address</button></form>
+  <p class="help mt-2">Did not expect this? Close the page; nothing changes unless you confirm.</p>
+  {% endif %}
+</div>
+{% endblock %}

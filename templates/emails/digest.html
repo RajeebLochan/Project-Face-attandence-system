@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Attendance summary</title></head>
+<body style="margin:0;padding:24px;background:#fafafa;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#171717;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:12px;">
+    <tr><td style="padding:24px;font-size:15px;line-height:1.6;">
+      <p style="margin:0 0 4px;font-size:13px;color:#6b6b6b;">{{ institution.name }}</p>
+      <p style="margin:0 0 16px;font-size:18px;">Attendance summary for {{ day_label }}</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="font-size:15px;">
+        <tr><td style="padding:2px 24px 2px 0;color:#6b6b6b;">On the register</td><td style="font-family:Menlo,Consolas,monospace;">{{ total }}</td></tr>
+        {% for label, count in rows %}<tr><td style="padding:2px 24px 2px 0;color:#6b6b6b;">{{ label }}</td><td style="font-family:Menlo,Consolas,monospace;">{{ count }}</td></tr>{% endfor %}
+        <tr><td style="padding:2px 24px 2px 0;color:#6b6b6b;">Check-outs not recorded earlier</td><td style="font-family:Menlo,Consolas,monospace;">{{ open_records }}</td></tr>
+        {% if failures is not None %}<tr><td style="padding:2px 24px 2px 0;color:#6b6b6b;">Failed notification e-mails</td><td style="font-family:Menlo,Consolas,monospace;">{{ failures }}</td></tr>{% endif %}
+      </table>
+      {% if dashboard_url %}<p style="margin:20px 0 0;font-size:14px;"><a href="{{ dashboard_url }}" style="color:#2b4c8c;">Open the dashboard</a> <span style="color:#6b6b6b;">(staff login required)</span></p>{% endif %}
+    </td></tr>
+  </table>
+</body></html>

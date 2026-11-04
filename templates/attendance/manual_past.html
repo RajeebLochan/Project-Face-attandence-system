@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Record a past entry{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{% url 'attendance-manual' %}">Manual attendance</a></div>
+<div class="page-head">
+  <div><h1>Record a past entry</h1>
+  <p class="sub">For a time that has already passed, such as a paper register entry. It is flagged as a past entry in the audit history and never sends a “just checked in” e-mail.</p></div>
+</div>
+{% include "includes/form_errors.html" %}
+<form method="post" class="panel form" novalidate data-once>
+  {% csrf_token %}
+  {% for field in form %}{% include "includes/field.html" %}{% endfor %}
+  <div class="actions"><button class="btn btn-primary" type="submit">Record entry</button><a class="btn" href="{% url 'attendance-manual' %}">Cancel</a></div>
+</form>
+{% endblock %}

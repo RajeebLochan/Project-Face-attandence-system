@@ -4,41 +4,54 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Attendance{% endblock %} · Attendance</title>
+  <link rel="preload" href="{% static 'app1/fonts/ibm-plex-sans-latin-400-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'app1/app.css' %}">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header">
-    <div class="inner">
-      <a class="brand" href="{% url 'home' %}">Attendance</a>
-      {% if user.is_authenticated %}
-      <nav aria-label="Main">
-        <ul class="nav">
-          <li><a href="{% url 'home' %}"{% if nav_section == 'home' %} aria-current="page"{% endif %}>Dashboard</a></li>
-          {% if perms.app1.use_kiosk %}<li><a href="{% url 'kiosk' %}"{% if nav_section == 'kiosk' %} aria-current="page"{% endif %}>Kiosk</a></li>{% endif %}
-          {% if perms.app1.view_student %}<li><a href="{% url 'student-list' %}"{% if nav_section == 'students' %} aria-current="page"{% endif %}>Students</a></li>{% endif %}
-          {% if perms.app1.view_attendance %}<li><a href="{% url 'student_attendance_list' %}"{% if nav_section == 'attendance' %} aria-current="page"{% endif %}>Attendance</a></li>{% endif %}
-          {% if perms.app1.view_auditevent %}<li><a href="{% url 'audit-log' %}"{% if nav_section == 'audit' %} aria-current="page"{% endif %}>Audit log</a></li>{% endif %}
-        </ul>
-      </nav>
-      <div class="user-menu">
-        <span class="muted">{{ user.get_username }}</span>
-        <form method="post" action="{% url 'logout' %}" class="inline">
-          {% csrf_token %}
-          <button class="btn-link" type="submit">Log out</button>
-        </form>
+  {% if user.is_authenticated %}
+  <div class="shell">
+    <aside class="sidebar" aria-label="Sidebar">
+      <a class="brand" href="{% url 'home' %}">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">Attendance{% if institution_name %}<span class="brand-sub">{{ institution_name }}</span>{% endif %}</span>
+      </a>
+      <nav aria-label="Main">{% include "includes/nav.html" %}</nav>
+      <div class="sidebar-foot">
+        <span class="who">{{ user.get_full_name|default:user.get_username }}</span>
+        <a href="{% url 'privacy-notice' %}">Privacy notice</a>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn-link" type="submit">Log out</button></form>
       </div>
-      {% endif %}
+    </aside>
+    <header class="topbar">
+      <a class="brand" href="{% url 'home' %}"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">Attendance</span></a>
+      <details>
+        <summary>Menu</summary>
+        <div class="menu">
+          <nav aria-label="Main menu">{% include "includes/nav.html" %}</nav>
+          <div class="sidebar-foot">
+            <span class="who">{{ user.get_full_name|default:user.get_username }}</span>
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn-link" type="submit">Log out</button></form>
+          </div>
+        </div>
+      </details>
+    </header>
+    <main id="main">
+  {% else %}
+  <main id="main" class="auth">
+    <div class="auth-card">
+      <a class="brand" href="{% url 'login' %}"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">Attendance</span></a>
+  {% endif %}
+      {% include "includes/messages.html" %}
+      {% block content %}{% endblock %}
+  {% if user.is_authenticated %}
+    </main>
+  </div>
+  {% else %}
     </div>
-  </header>
-  <main id="main">
-    {% if messages %}
-    <ul class="messages">
-      {% for message in messages %}<li class="alert alert-{{ message.tags|default:'info' }}" role="status">{{ message }}</li>{% endfor %}
-    </ul>
-    {% endif %}
-    {% block content %}{% endblock %}
   </main>
+  {% endif %}
   {% block scripts %}{% endblock %}
+  <script src="{% static 'app1/forms.js' %}" defer></script>
 </body>
 </html>

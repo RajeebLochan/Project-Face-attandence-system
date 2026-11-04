@@ -1,1 +1,1 @@
-{% if student.consent_status == "given" %}<span class="badge badge-success">Given</span>{% elif student.consent_status == "withdrawn" %}<span class="badge badge-danger">Withdrawn</span>{% else %}<span class="badge">Not recorded</span>{% endif %}
+{% if student.consent_status == "given" %}<span class="tag tag-ok">Consent given</span>{% elif student.consent_status == "withdrawn" %}<span class="tag tag-danger">Consent withdrawn</span>{% else %}<span class="tag">No consent recorded</span>{% endif %}

@@ -1,61 +1,111 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% load attendance_tags %}
+{% block title %}Today{% endblock %}
 {% block content %}
 <div class="page-head">
   <div>
-    <h1>Dashboard</h1>
-    <p class="muted">Today is {{ today|date:"l, j F Y" }}</p>
+    <h1>{{ today|date:"l j F Y" }}</h1>
+    {% if roster_total is not None %}<p class="sub num">{{ roster_total }} student{{ roster_total|pluralize }} on today’s register{% if not perms.app1.view_all_batches %} in your batches{% endif %}</p>{% endif %}
   </div>
   <div class="actions">
     {% if perms.app1.use_kiosk %}<a class="btn btn-primary" href="{% url 'kiosk' %}">Open kiosk</a>{% endif %}
     {% if perms.app1.add_attendance %}<a class="btn" href="{% url 'attendance-manual' %}">Manual attendance</a>{% endif %}
-    {% if perms.app1.add_student %}<a class="btn" href="{% url 'student-enroll' %}">Enrol student</a>{% endif %}
   </div>
 </div>
 
-{% if not models_ready %}
-<div class="alert alert-warning" role="status">
-  Face recognition models are not installed on this server. Enrolment and the kiosk will not work until an administrator runs <span class="mono">python manage.py setup_face_models</span>. Manual attendance still works.
-</div>
+{% if issues %}
+<section aria-labelledby="issues-title" class="issues-block">
+  <h2 id="issues-title" class="visually-hidden">Needs attention</h2>
+  <ul class="issues">
+    {% for text, target in issues %}<li><span>{{ text }}</span>{% if target %}<a href="{% url target %}">Open</a>{% endif %}</li>{% endfor %}
+  </ul>
+</section>
 {% endif %}
 
-<div class="grid">
-  {% if checked_in_today is not None %}
-  <div class="card stat"><span class="value">{{ checked_in_today }}</span><span class="label">Checked in today</span></div>
-  <div class="card stat"><span class="value">{{ checked_out_today }}</span><span class="label">Checked out today</span></div>
-  {% endif %}
-  {% if total_students is not None %}
-  <div class="card stat"><span class="value">{{ total_students }}</span><span class="label">Students enrolled</span></div>
-  <div class="card stat"><span class="value">{{ eligible_students }}</span><span class="label">Authorized for recognition</span></div>
-  <div class="card stat">
-    <span class="value">{{ pending_authorization }}</span>
-    <span class="label">Awaiting authorization{% if pending_authorization and perms.app1.authorize_student %} · <a href="{% url 'student-list' %}?status=pending">review</a>{% endif %}</span>
+{% if roster_total is not None %}
+<section class="panel register" aria-labelledby="register-title">
+  <div class="section-head">
+    <h2 id="register-title">Today’s register</h2>
+    {% if perms.app1.view_attendance %}<a class="small" href="{% url 'register-day' %}">Printable register</a>{% endif %}
   </div>
-  {% endif %}
-</div>
-
-{% if recent is not None %}
-<section class="mt-2">
-  <h2>Today’s latest activity</h2>
-  {% if recent %}
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th scope="col">Student</th><th scope="col">Registration no.</th><th scope="col">Checked in</th><th scope="col">Checked out</th></tr></thead>
-      <tbody>
-        {% for record in recent %}
-        <tr>
-          <td>{{ record.student.name }}</td>
-          <td class="mono">{{ record.student.registration_number }}</td>
-          <td class="tabular">{{ record.check_in_time|time:"H:i"|default:"—" }}</td>
-          <td class="tabular">{{ record.check_out_time|time:"H:i"|default:"—" }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  {% if roster_total %}
+  <div class="figures">
+    <div class="figure"><div class="value">{{ arrived }}<span class="muted"> / {{ roster_total }}</span></div><div class="label">Checked in</div></div>
+    <div class="figure"><div class="value">{{ late }}</div><div class="label">Late</div><div class="note">{% if expected %}after {{ expected.label }} plus {{ expected.grace_minutes }} min{% else %}no schedule set{% endif %}</div></div>
+    <div class="figure"><div class="value">{{ checked_out }}</div><div class="label">Checked out</div></div>
+    <div class="figure"><div class="value">{{ not_recorded }}</div><div class="label">Not yet recorded</div></div>
+  </div>
+  <div class="bar-wrap">
+    <svg viewBox="0 0 100 12" preserveAspectRatio="none" role="img" aria-label="{% for s in strip %}{{ s.label }} {{ s.count }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+      {% for s in strip %}<rect x="{{ s.x }}" y="0" width="{{ s.width }}" height="12" class="fill-{{ s.status }}"></rect>{% endfor %}
+    </svg>
+  </div>
+  <ul class="legend">
+    {% for s in strip %}<li>{{ s.status|status_dot }}<b class="num">{{ s.count }}</b></li>{% endfor %}
+  </ul>
+  <div class="timeline-block">
+    <svg class="timeline-svg" viewBox="0 0 1000 56" preserveAspectRatio="none" role="img" aria-label="Check-in times today, 06:00 to 20:00">
+      {% for x in rules %}<line class="rule" x1="{{ x }}" x2="{{ x }}" y1="0" y2="56"></line>{% endfor %}
+      {% if expected %}<rect class="grace" x="{{ expected.x }}" y="0" width="{{ expected.grace }}" height="56"></rect><line class="start" x1="{{ expected.x }}" x2="{{ expected.x }}" y1="0" y2="56"></line>{% endif %}
+      {% for m in timeline %}<rect class="fill-{{ m.status }}" x="{{ m.x }}" y="{% if m.late %}8{% else %}20{% endif %}" width="2.5" height="{% if m.late %}48{% else %}36{% endif %}"><title>{{ m.time }}</title></rect>{% endfor %}
+    </svg>
+    <div class="hours" aria-hidden="true">{% for h in hours %}<span>{{ h }}</span>{% endfor %}</div>
+    <p class="timeline-note">{% if expected %}Shaded band: expected start {{ expected.label }} and {{ expected.grace_minutes }}-minute grace period{% if expected.several %} (earliest of several batch schedules){% endif %}. Taller marks are late check-ins.{% else %}Set a schedule for each batch to judge lateness and absence. Until then the register only says who has checked in.{% endif %}</p>
   </div>
   {% else %}
-  <div class="card empty-state">No attendance has been recorded today yet.</div>
+  <div class="empty">No students are on today’s register{% if not perms.app1.view_all_batches %} in your batches{% endif %}.{% if perms.app1.add_student %}<p><a href="{% url 'student-enroll' %}">Enrol a student</a> or <a href="{% url 'student-import' %}">import a CSV</a>.</p>{% endif %}</div>
   {% endif %}
 </section>
 {% endif %}
+
+<div class="split section">
+  {% if recent is not None %}
+  <section aria-labelledby="recent-title">
+    <div class="section-head"><h2 id="recent-title">Latest attendance events</h2>{% if perms.app1.view_auditevent %}<a class="small" href="{% url 'audit-log' %}">Audit history</a>{% endif %}</div>
+    {% if recent %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Student</th><th scope="col">Event</th><th scope="col">Time</th><th scope="col" class="hide-sm">Recorded by</th></tr></thead>
+        <tbody>
+        {% for event in recent %}
+          <tr>
+            <td>{% if event.student %}<a class="row-link" href="{% url 'student-detail' event.student_id %}">{{ event.student.name }}</a><span class="sub mono">{{ event.student.registration_number }}</span>{% else %}—{% endif %}</td>
+            <td>{{ event.get_action_display }}{% if event.source == "manual" %} <span class="tag">manual</span>{% endif %}</td>
+            <td>{% if event.action == "check_out" %}{{ event.attendance.check_out_time|stamp }}{% elif event.action == "check_in" %}{{ event.attendance.check_in_time|stamp }}{% else %}{{ event.created_at|stamp }}{% endif %}</td>
+            <td class="secondary hide-sm">{{ event.actor.get_username|default:"—" }}{% if event.source == "kiosk" %} <span class="sub">at the kiosk</span>{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="panel empty">Nothing recorded yet today.</div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <div class="stack">
+    {% if pending is not None %}
+    <section class="panel panel-tight" aria-labelledby="pending-title">
+      <div class="section-head"><h2 id="pending-title">Waiting for photo review</h2><span class="meta num">{{ pending|length }}</span></div>
+      {% if pending %}
+      <ul class="result-list">
+        {% for student in pending %}<li><a href="{% url 'student-authorize' student.pk %}"><span>{{ student.name }}<span class="sub mono">{{ student.registration_number }}</span></span><span class="small">Review</span></a></li>{% endfor %}
+      </ul>
+      {% else %}<p class="muted small">No enrolment photos are waiting.</p>{% endif %}
+    </section>
+    {% endif %}
+    {% if open_records is not None %}
+    <section class="panel panel-tight" aria-labelledby="open-title">
+      <div class="section-head"><h2 id="open-title">Check-out not recorded</h2><span class="meta">last 14 days</span></div>
+      {% if open_records %}
+      <ul class="result-list">
+        {% for record in open_records %}<li><a href="{% url 'attendance-correct' record.pk %}"><span>{{ record.student.name }}<span class="sub">{{ record.date|weekday_day }}, in {{ record.check_in_time|time:"H:i" }}</span></span><span class="small">Resolve</span></a></li>{% endfor %}
+      </ul>
+      <p class="help">The system never invents a check-out time. Enter the real time, or mark the record as reviewed.</p>
+      {% else %}<p class="muted small">Every earlier day is closed.</p>{% endif %}
+    </section>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

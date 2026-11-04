@@ -1,15 +1,77 @@
 {% extends "base.html" %}
+{% load attendance_tags %}
 {% block title %}Manual attendance{% endblock %}
 {% block content %}
-<h1>Manual attendance</h1>
-<p class="muted">For students who are not enrolled for recognition, have withdrawn consent, or were not recognised. Every manual entry is logged with your name and reason.</p>
-{% include "includes/form_errors.html" %}
-<form method="post" class="card form" novalidate>
-  {% csrf_token %}
-  {% for field in form %}{% include "includes/field.html" %}{% endfor %}
-  <div class="actions">
-    <button class="btn btn-primary" type="submit">Record</button>
-    <a class="btn" href="{% url 'student_attendance_list' %}">Cancel</a>
+<div class="page-head">
+  <div>
+    <h1>Manual attendance</h1>
+    <p class="sub">For a camera that is unavailable, a match that failed, or a student who declined face recognition</p>
   </div>
-</form>
+  <a class="btn" href="{% url 'attendance-manual-past' %}{% if selected %}?student={{ selected.student.pk }}{% endif %}">Record a past entry</a>
+</div>
+
+<div class="split split-even">
+  <section class="panel" aria-labelledby="find-title">
+    <h2 id="find-title">Find student</h2>
+    <form method="get" class="filters mt-2" role="search">
+      <div class="field"><label for="q">Name or registration number</label><input type="search" id="q" name="q" value="{{ q }}" autocomplete="off" autofocus></div>
+      <button class="btn" type="submit">Search</button>
+    </form>
+    {% if q %}
+      {% if results %}
+      <ul class="result-list" aria-label="Search results">
+        {% for student, status in results %}
+        <li><a href="?q={{ q|urlencode }}&amp;student={{ student.pk }}"{% if selected and selected.student.pk == student.pk %} aria-current="true"{% endif %}>
+          <span>{{ student.name }}<span class="sub mono">{{ student.registration_number }}</span></span>
+          {{ status.status|status_dot:status.label }}
+        </a></li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="muted">No student in your batches matches “{{ q }}”.</p>{% endif %}
+    {% else %}<p class="muted small">Search by part of the name or the start of the registration number.</p>{% endif %}
+  </section>
+
+  <section class="panel" aria-labelledby="selected-title">
+    {% if selected %}
+    <div class="person">
+      {% if selected.student.image and perms.app1.view_student_photo %}<img class="avatar" src="{% url 'student-photo' selected.student.pk %}" alt="">{% endif %}
+      <div>
+        <h2 id="selected-title">{{ selected.student.name }}</h2>
+        <div class="mono secondary">{{ selected.student.registration_number }}</div>
+      </div>
+    </div>
+    <dl class="facts mt-2">
+      <dt>Today</dt><dd>{{ selected.status|status_dot }}</dd>
+      <dt>Checked in</dt><dd>{{ selected.record.check_in_time|stamp }}</dd>
+      <dt>Checked out</dt><dd>{{ selected.record.check_out_time|stamp }}</dd>
+    </dl>
+    {% if selected.status == "not_enrolled" %}
+      <p class="notice notice-warning mt-2">This student is not on today’s register. Reactivate them first if they have returned.</p>
+    {% else %}
+    <div class="transition mt-2">
+      {% with rec=selected.record %}
+      <form method="post" action="{% url 'attendance-manual-record' %}" data-once novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="student" value="{{ selected.student.pk }}"><input type="hidden" name="mode" value="check_in">
+        <label for="reason-in" class="small">Reason for check-in</label>
+        <textarea id="reason-in" name="reason" rows="2" required minlength="5" maxlength="500" placeholder="For example: camera unavailable"{% if rec.check_in_time %} disabled{% endif %}></textarea>
+        <button class="btn btn-primary" type="submit"{% if rec.check_in_time %} disabled aria-disabled="true"{% endif %}>Check in now</button>
+      </form>
+      <form method="post" action="{% url 'attendance-manual-record' %}" data-once novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="student" value="{{ selected.student.pk }}"><input type="hidden" name="mode" value="check_out">
+        <label for="reason-out" class="small">Reason for check-out</label>
+        <textarea id="reason-out" name="reason" rows="2" required minlength="5" maxlength="500" placeholder="For example: leaving early, approved"{% if not rec.check_in_time or rec.check_out_time %} disabled{% endif %}></textarea>
+        <button class="btn" type="submit"{% if not rec.check_in_time or rec.check_out_time %} disabled aria-disabled="true"{% endif %}>Check out now</button>
+      </form>
+      {% endwith %}
+    </div>
+    <p class="help mt-2">{% if selected.record.check_out_time %}Today is complete. Use <a href="{% url 'attendance-correct' selected.record.pk %}">Correct</a> to change a time.{% elif not selected.record.check_in_time %}Check-out becomes available after check-in.{% else %}Times are recorded now, in {{ time_zone }}. For an earlier time, use “Record a past entry”.{% endif %}</p>
+    {% endif %}
+    {% else %}
+    <h2 id="selected-title">No student selected</h2>
+    <p class="muted mt-1">Search, then pick a student to see today’s status and record a check-in or check-out.</p>
+    {% endif %}
+  </section>
+</div>
 {% endblock %}

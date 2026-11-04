@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Settings</h1><p class="sub">Institution details, e-mail notifications and attendance policy</p></div></div>
+{% include "includes/form_errors.html" %}
+<div class="split">
+  <form method="post" class="stack" novalidate data-once>
+    {% csrf_token %}
+    <section class="panel" aria-labelledby="inst-title">
+      <h2 id="inst-title">Institution</h2>
+      <p class="secondary small mt-1">Shown in e-mails. The contact is where students and guardians report mistakes.</p>
+      <div class="mt-2">
+        {% include "includes/field.html" with field=form.name %}
+        {% include "includes/field.html" with field=form.contact_email %}
+        {% include "includes/field.html" with field=form.contact_phone %}
+      </div>
+    </section>
+    <section class="panel" aria-labelledby="mail-title">
+      <h2 id="mail-title">Attendance e-mails</h2>
+      <p class="secondary small mt-1">Each recipient must be verified first. E-mails are queued with the attendance change and sent by the notification worker.</p>
+      <div class="mt-2">
+        {% include "includes/field.html" with field=form.notifications_enabled %}
+        {% include "includes/field.html" with field=form.notify_check_in %}
+        {% include "includes/field.html" with field=form.notify_check_out %}
+        {% include "includes/field.html" with field=form.notify_corrections %}
+        {% include "includes/field.html" with field=form.digest_enabled %}
+        {% include "includes/field.html" with field=form.digest_time %}
+      </div>
+      <button class="btn btn-primary" type="submit">Save settings</button>
+    </section>
+  </form>
+
+  <div class="stack">
+    <section class="panel" aria-labelledby="transport-title">
+      <h2 id="transport-title">Mail server</h2>
+      <p class="secondary small mt-1">Configured with environment variables; passwords are never shown here.</p>
+      <dl class="facts mt-2">
+        <dt>Backend</dt><dd>{{ transport.backend }}{% if transport.is_local %} <span class="tag">local, not delivered</span>{% endif %}</dd>
+        <dt>Server</dt><dd class="mono">{{ transport.host }}:{{ transport.port }}</dd>
+        <dt>Encryption</dt><dd>{{ transport.security }}</dd>
+        <dt>Login</dt><dd>{% if transport.username_set %}username set{% else %}none{% endif %}{% if transport.password_set %}, password set{% endif %}</dd>
+        <dt>From</dt><dd class="mono">{{ transport.from_address }}</dd>
+        <dt>Timeout</dt><dd class="num">{{ transport.timeout }} s</dd>
+        <dt>Site URL</dt><dd class="mono">{{ transport.site_url }}</dd>
+      </dl>
+      {% if problems %}<ul class="issues mt-2">{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+      <form method="post" action="{% url 'test-email' %}" class="mt-2" data-once>
+        {% csrf_token %}
+        <button class="btn" type="submit"{% if not user.email %} disabled aria-disabled="true"{% endif %}>Send test e-mail</button>
+      </form>
+      <p class="help">{% if user.email %}Goes to your own address, {{ user.email }}, straight away (not through the queue).{% else %}Add an e-mail address to your account to send a test.{% endif %}</p>
+    </section>
+    <section class="panel" aria-labelledby="preview-title">
+      <h2 id="preview-title">Message previews</h2>
+      <p class="secondary small mt-1">With sample data, not a real student.</p>
+      <ul class="result-list mt-1">
+        <li><a href="{% url 'template-preview' 'check_in' 'html' %}" target="_blank" rel="noopener"><span>Check-in</span><span class="small">HTML</span></a></li>
+        <li><a href="{% url 'template-preview' 'check_out' 'txt' %}" target="_blank" rel="noopener"><span>Check-out</span><span class="small">Plain text</span></a></li>
+        <li><a href="{% url 'template-preview' 'correction' 'html' %}" target="_blank" rel="noopener"><span>Correction</span><span class="small">HTML</span></a></li>
+      </ul>
+    </section>
+    <section class="panel" aria-labelledby="recip-title">
+      <h2 id="recip-title">Staff recipients</h2>
+      {% if recipients %}
+      <ul class="result-list mt-1">{% for pref in recipients %}<li><a href="{% url 'staff-edit' pref.user_id %}"><span>{{ pref.user.get_full_name|default:pref.user.username }}<span class="sub">{{ pref.user.email|default:"no e-mail" }}</span></span>{% if pref.email_is_verified %}<span class="tag tag-ok">verified</span>{% else %}<span class="tag tag-warn">not verified</span>{% endif %}</a></li>{% endfor %}</ul>
+      {% else %}<p class="muted small mt-1">No staff receive notifications. Choose recipients on the <a href="{% url 'staff-list' %}">Staff</a> page.</p>{% endif %}
+    </section>
+    <section class="panel" aria-labelledby="policy-title">
+      <h2 id="policy-title">Attendance policy</h2>
+      <p class="secondary small mt-1">Working days, expected start, grace period and holidays are set per batch, effective from a date.</p>
+      <div class="actions mt-2"><a class="btn" href="{% url 'batch-list' %}">Batches and schedules</a><a class="btn" href="{% url 'leave-list' %}">Leave</a></div>
+    </section>
+  </div>
+</div>
+{% endblock %}

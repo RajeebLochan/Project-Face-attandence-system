@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{% if staff %}{{ staff.username }}{% else %}Add staff{% endif %}{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{% url 'staff-list' %}">Staff</a></div>
+<div class="page-head"><h1>{% if staff %}{{ staff.get_full_name|default:staff.username }}{% else %}Add staff{% endif %}</h1></div>
+<div class="split">
+  <form method="post" class="panel" novalidate data-once>
+    {% csrf_token %}
+    {% include "includes/form_errors.html" %}
+    <div class="split split-even">
+      <div>{% include "includes/field.html" with field=form.username %}{% include "includes/field.html" with field=form.first_name %}{% include "includes/field.html" with field=form.last_name %}{% include "includes/field.html" with field=form.email %}{% if form.password %}{% include "includes/field.html" with field=form.password %}{% endif %}</div>
+      <div>{% include "includes/field.html" with field=form.role %}{% include "includes/field.html" with field=form.batches %}{% include "includes/field.html" with field=form.is_active %}</div>
+    </div>
+    <div class="actions"><button class="btn btn-primary" type="submit">{% if staff %}Save{% else %}Create account{% endif %}</button><a class="btn" href="{% url 'staff-list' %}">Cancel</a></div>
+  </form>
+  {% if staff %}
+  <section class="panel" aria-labelledby="notify-title">
+    <h2 id="notify-title">Notification e-mails</h2>
+    <p class="secondary small mt-1">{% if staff.email %}{{ staff.email }} {% if pref.email_is_verified %}<span class="tag tag-ok">verified</span>{% else %}<span class="tag tag-warn">not verified</span>{% endif %}{% else %}No e-mail address on this account.{% endif %}</p>
+    <form method="post" action="{% url 'staff-preferences' staff.pk %}" class="mt-2" novalidate>
+      {% csrf_token %}
+      {% for field in pref_form %}{% include "includes/field.html" %}{% endfor %}
+      <button class="btn" type="submit">Save preferences</button>
+    </form>
+    {% if staff.email and not pref.email_is_verified %}
+    <form method="post" action="{% url 'staff-verify' staff.pk %}" class="mt-2" data-once>{% csrf_token %}<button class="btn" type="submit">Send verification e-mail</button></form>
+    {% endif %}
+    <p class="help mt-2">Staff only receive e-mails about students they can see.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
