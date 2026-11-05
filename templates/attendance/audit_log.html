@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Audit history{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Audit history</h1><p class="sub">Who changed what, when and why. Entries are never edited.</p></div></div>
+<form method="get" class="filters" role="search" novalidate>
+  {% include "includes/field.html" with field=form.q %}
+  {% include "includes/field.html" with field=form.action %}
+  {% include "includes/field.html" with field=form.date_from %}
+  {% include "includes/field.html" with field=form.date_to %}
+  <button class="btn" type="submit">Search</button>
+</form>
+{% if page.object_list %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">When</th><th scope="col">Event</th><th scope="col">Student</th><th scope="col">By</th><th scope="col">Reason</th></tr></thead>
+    <tbody>
+      {% for event in page.object_list %}
+      <tr>
+        <td class="num">{{ event.created_at|date:"j M Y, H:i" }}</td>
+        <td>{{ event.get_action_display }}{% if event.source == "manual" %} <span class="tag">manual</span>{% elif event.source == "kiosk" %} <span class="tag">kiosk</span>{% endif %}{% if event.details.backdated %} <span class="tag">past entry</span>{% endif %}</td>
+        <td>{% if event.student %}<a class="row-link" href="{% url 'student-detail' event.student_id %}">{{ event.student.name }}</a><span class="sub mono">{{ event.student.registration_number }}</span>{% elif event.details.student_id %}<span class="muted">Deleted student #{{ event.details.student_id }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td class="secondary">{{ event.actor.get_username|default:"system" }}</td>
+        <td>{{ event.reason|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "includes/pagination.html" %}
+{% else %}<div class="panel empty">No events match.</div>{% endif %}
+{% endblock %}

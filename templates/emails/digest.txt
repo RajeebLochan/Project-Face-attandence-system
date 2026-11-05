@@ -1,0 +1,10 @@
+{% autoescape off %}{{ institution.name }} — attendance summary for {{ day_label }}
+
+Students on the register: {{ total }}
+{% for label, count in rows %}{{ label }}: {{ count }}
+{% endfor %}
+Check-outs not recorded on earlier days: {{ open_records }}{% if failures is not None %}
+Failed notification e-mails: {{ failures }}{% endif %}
+{% if dashboard_url %}
+Details (staff login required): {{ dashboard_url }}{% endif %}
+{% endautoescape %}

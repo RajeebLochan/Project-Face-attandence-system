@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load attendance_tags %}
+{% block title %}Correct attendance{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{% url 'student_attendance_list' %}">Attendance log</a></div>
+<div class="page-head">
+  <div><h1>Correct attendance</h1>
+  <p class="sub">{{ attendance.student.name }} · <span class="mono">{{ attendance.student.registration_number }}</span> · {{ attendance.date|date:"l j F Y" }}</p></div>
+</div>
+<div class="split">
+  <section class="panel" aria-labelledby="fix-title">
+    <h2 id="fix-title">New times</h2>
+    <p class="secondary small mt-1">Currently in {{ attendance.check_in_time|stamp }} and out {{ attendance.check_out_time|stamp }}. Leave a time empty to clear it. The original values stay in the audit history.</p>
+    {% include "includes/form_errors.html" %}
+    <form method="post" class="mt-2" novalidate data-once>
+      {% csrf_token %}
+      {% for field in form %}{% include "includes/field.html" %}{% endfor %}
+      <div class="actions"><button class="btn btn-primary" type="submit">Save correction</button><a class="btn" href="{% url 'student_attendance_list' %}">Cancel</a></div>
+    </form>
+  </section>
+  {% if attendance.check_in_time and not attendance.check_out_time and not attendance.checkout_review_at %}
+  <section class="panel" aria-labelledby="review-title">
+    <h2 id="review-title">Real check-out time unknown?</h2>
+    <p class="secondary small mt-1">Mark the missing check-out as reviewed. The record keeps no check-out time; nothing is invented.</p>
+    <form method="post" action="{% url 'attendance-review-checkout' attendance.pk %}" novalidate data-once>
+      {% csrf_token %}
+      {% include "includes/field.html" with field=review_form.reason %}
+      <button class="btn" type="submit">Mark as reviewed</button>
+    </form>
+  </section>
+  {% elif attendance.checkout_review_at %}
+  <section class="panel"><h2>Missing check-out reviewed</h2><p class="secondary small mt-1">By {{ attendance.checkout_review_by.get_username|default:"—" }} on {{ attendance.checkout_review_at|date:"j M Y H:i" }}</p></section>
+  {% endif %}
+</div>
+<section class="section" aria-labelledby="history-title">
+  <div class="section-head"><h2 id="history-title">History of this record</h2></div>
+  {% if history %}
+  <div class="table-wrap"><table>
+    <thead><tr><th scope="col">When</th><th scope="col">Event</th><th scope="col">Source</th><th scope="col">By</th><th scope="col">Reason</th></tr></thead>
+    <tbody>{% for event in history %}<tr><td class="num">{{ event.created_at|date:"j M Y, H:i" }}</td><td>{{ event.get_action_display }}{% if event.details.backdated %} <span class="tag">past entry</span>{% endif %}</td><td class="secondary">{{ event.get_source_display }}</td><td class="secondary">{{ event.actor.get_username|default:"—" }}</td><td>{{ event.reason|default:"—" }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<div class="panel empty">No logged events for this record (it may predate the audit history).</div>{% endif %}
+</section>
+{% endblock %}

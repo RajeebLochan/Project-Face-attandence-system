@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Not found{% endblock %}
+{% block content %}
+<div class="panel">
+  <h1>Page not found</h1>
+  <p>The page or record does not exist, was removed, or is outside your batches.</p>
+  <a href="{% url 'home' %}">Back to today</a>
+</div>
+{% endblock %}

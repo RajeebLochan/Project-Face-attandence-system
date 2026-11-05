@@ -1,0 +1,4 @@
+{% autoescape off %}This is a test message from the attendance system{% if institution.name %} for {{ institution.name }}{% endif %}, sent at the request of {{ user.get_username }}.
+
+If you received it, the mail server accepted the configured settings. No action is needed.
+{% endautoescape %}

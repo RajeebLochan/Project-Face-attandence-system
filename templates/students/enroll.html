@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Enrol student{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{% url 'student-list' %}">Students</a></div>
+<div class="page-head">
+  <div>
+    <h1>Enrol student</h1>
+    <p class="sub">Photos are stored privately. An attendance admin reviews each photo before recognition is switched on.</p>
+  </div>
+</div>
+{% include "includes/form_errors.html" %}
+<form method="post" enctype="multipart/form-data" class="split split-even" novalidate data-once>
+  {% csrf_token %}
+  <section class="panel" aria-labelledby="details-title">
+    <h2 id="details-title">Details</h2>
+    <div class="mt-2">
+      {% include "includes/field.html" with field=form.name %}
+      {% include "includes/field.html" with field=form.registration_number %}
+      {% include "includes/field.html" with field=form.email %}
+      {% include "includes/field.html" with field=form.branch %}
+      {% include "includes/field.html" with field=form.year %}
+    </div>
+    <p class="help">Students who do not consent to face recognition are added with <a href="{% url 'student-import' %}">CSV import</a> and use manual attendance.</p>
+  </section>
+  <section class="panel" aria-labelledby="photo-title">
+    <h2 id="photo-title">Consent and photo</h2>
+    <p class="secondary small mt-1">Give the student (or parent or guardian) the <a href="{% url 'privacy-notice' %}" target="_blank" rel="noopener">privacy notice, version {{ privacy_notice_version }}</a> first.</p>
+    {% include "includes/field.html" with field=form.consent %}
+    {% include "includes/photo_capture.html" with field=form.photo %}
+    <div class="actions">
+      <button class="btn btn-primary" type="submit">Enrol student</button>
+      <a class="btn" href="{% url 'student-list' %}">Cancel</a>
+    </div>
+  </section>
+</form>
+{% endblock %}
+{% block scripts %}<script src="{% static 'app1/photo_capture.js' %}" defer></script>{% endblock %}

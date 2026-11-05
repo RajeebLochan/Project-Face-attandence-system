@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Batches and schedules{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Batches and schedules</h1><p class="sub">Rosters, working days, expected start and holidays. Changes apply from a date, so earlier days are not rewritten.</p></div>{% if perms.app1.manage_batches %}<a class="btn btn-primary" href="{% url 'batch-new' %}">Add batch</a>{% endif %}</div>
+{% if rows %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">Batch</th><th scope="col" class="count">Students today</th><th scope="col">Schedule today</th><th scope="col">Instructors</th></tr></thead>
+    <tbody>
+      {% for batch, schedule in rows %}
+      <tr>
+        <td><a class="row-link" href="{% url 'batch-detail' batch.pk %}">{{ batch.name }}</a><span class="sub mono">{{ batch.code }}{% if not batch.is_active %} · inactive{% endif %}</span></td>
+        <td class="count">{{ batch.members }}</td>
+        <td>{% if schedule %}{{ schedule.weekday_labels }} · <span class="stamp">{{ schedule.start_time|time:"H:i" }}</span> <span class="secondary small">+{{ schedule.grace_minutes }} min</span>{% else %}<span class="tag tag-warn">no schedule</span>{% endif %}</td>
+        <td class="secondary">{% for person in batch.instructors.all %}{{ person.get_full_name|default:person.username }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}<div class="panel empty">No batches yet.{% if perms.app1.manage_batches %}<p><a href="{% url 'batch-new' %}">Add the first batch</a>, then give it a schedule.</p>{% endif %}</div>{% endif %}
+
+<section class="section split" aria-labelledby="holiday-title">
+  <div>
+    <div class="section-head"><h2 id="holiday-title">Upcoming holidays</h2></div>
+    {% if holidays %}
+    <div class="table-wrap"><table>
+      <thead><tr><th scope="col">Date</th><th scope="col">Holiday</th><th scope="col">Applies to</th>{% if perms.app1.manage_batches %}<th scope="col"><span class="visually-hidden">Actions</span></th>{% endif %}</tr></thead>
+      <tbody>{% for h in holidays %}<tr><td class="num">{{ h.date|date:"D j M Y" }}</td><td>{{ h.name }}</td><td class="secondary">{{ h.batch.name|default:"All batches" }}</td>{% if perms.app1.manage_batches %}<td><form method="post" action="{% url 'holiday-delete' h.pk %}" data-once>{% csrf_token %}<button class="btn-link" type="submit">Remove<span class="visually-hidden"> {{ h.name }}</span></button></form></td>{% endif %}</tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<div class="panel empty">No upcoming holidays.</div>{% endif %}
+  </div>
+  {% if perms.app1.manage_batches %}
+  <form method="post" action="{% url 'holiday-add' %}" class="panel" novalidate data-once>
+    {% csrf_token %}
+    <h2>Add holiday</h2>
+    <div class="mt-2">{% for field in holiday_form %}{% include "includes/field.html" %}{% endfor %}</div>
+    <button class="btn" type="submit">Add holiday</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

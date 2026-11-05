@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Staff{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Staff</h1><p class="sub">Accounts, roles, batch assignments and notification preferences</p></div><a class="btn btn-primary" href="{% url 'staff-new' %}">Add staff</a></div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col">Batches</th><th scope="col">Notifications</th><th scope="col">Last login</th></tr></thead>
+    <tbody>
+      {% for person, role in rows %}
+      <tr>
+        <td>{% if person.is_superuser and not user.is_superuser %}{{ person.get_full_name|default:person.username }}{% else %}<a class="row-link" href="{% url 'staff-edit' person.pk %}">{{ person.get_full_name|default:person.username }}</a>{% endif %}<span class="sub">{{ person.username }}{% if not person.is_active %} · inactive{% endif %}</span></td>
+        <td>{% if person.is_superuser %}Superuser{% elif role == "admin" %}Attendance admin{% elif role == "instructor" %}Instructor{% else %}<span class="muted">No access</span>{% endif %}</td>
+        <td class="secondary">{% for b in person.assigned_batches.all %}{{ b.code }}{% if not forloop.last %}, {% endif %}{% empty %}{% if role == "instructor" %}<span class="tag tag-warn">none assigned</span>{% else %}—{% endif %}{% endfor %}</td>
+        <td>{% with pref=person.notification_preference %}{% if pref and pref.receives_anything %}{% if pref.email_is_verified %}<span class="tag tag-ok">on</span>{% else %}<span class="tag tag-warn">waiting for verification</span>{% endif %}{% else %}<span class="muted">off</span>{% endif %}{% endwith %}</td>
+        <td class="num secondary">{{ person.last_login|date:"j M Y"|default:"never" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="help mt-2">Attendance admins see every batch. Instructors only see students in their assigned batches, including on direct links and exports.</p>
+{% endblock %}

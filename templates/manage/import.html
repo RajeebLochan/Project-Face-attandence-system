@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Import students{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{% url 'student-list' %}">Students</a></div>
+<div class="page-head"><div><h1>Import students</h1><p class="sub">Upload a CSV, check the preview, then confirm. Photos and consent are recorded separately, per student.</p></div></div>
+{% if rows is None %}
+<div class="split">
+  <form method="post" enctype="multipart/form-data" class="panel" novalidate data-once>
+    {% csrf_token %}
+    {% include "includes/field.html" with field=form.file %}
+    <button class="btn btn-primary" type="submit">Preview import</button>
+  </form>
+  <section class="panel" aria-labelledby="format-title">
+    <h2 id="format-title">File format</h2>
+    <p class="secondary small mt-1">UTF-8 CSV with a header row, up to 1,000 rows and 1 MB.</p>
+    <pre class="mail mt-2">name,email,registration_number,branch,year,batch_code,enrolled_on,guardian_name,guardian_email
+Asha Verma,asha@example.edu,21CSE001,CSE,1st Year,CSE-A,2026-07-01,Ravi Verma,ravi@example.com</pre>
+    <p class="help mt-2">Required: name, email, registration_number, branch, year. Branch codes: CSE, ETC, EE, ME, A&amp;EI, CIVIL, IT, CHE. Years: 1st Year to 4th Year. Rows whose registration number already exists are skipped, never merged.</p>
+  </section>
+</div>
+{% else %}
+<div class="figures">
+  <div class="figure"><div class="value">{{ counts.new }}</div><div class="label">Ready to import</div></div>
+  <div class="figure"><div class="value">{{ counts.exists }}</div><div class="label">Already on record</div></div>
+  <div class="figure"><div class="value">{{ counts.duplicate_in_file }}</div><div class="label">Duplicate in file</div></div>
+  <div class="figure"><div class="value">{{ counts.invalid }}</div><div class="label">Need fixing</div></div>
+</div>
+<div class="table-wrap mt-2"><table>
+  <thead><tr><th scope="col">Line</th><th scope="col">Student</th><th scope="col">Result</th></tr></thead>
+  <tbody>{% for row in rows %}<tr>
+    <td class="num">{{ row.line }}</td>
+    <td>{{ row.values.name|default:"—" }}<span class="sub mono">{{ row.values.registration_number }}</span></td>
+    <td>{% if row.status == "new" %}<span class="tag tag-ok">Will be imported</span>{% elif row.status == "exists" %}<span class="tag">Already on record, skipped</span>{% else %}<span class="tag tag-danger">{% if row.status == "duplicate_in_file" %}Duplicate{% else %}Invalid{% endif %}</span>{% endif %}{% for e in row.errors %}<span class="sub">{{ e }}</span>{% endfor %}</td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+<div class="actions mt-2">
+  {% if counts.new %}<form method="post" action="{% url 'student-import-confirm' %}" data-once>{% csrf_token %}<input type="hidden" name="token" value="{{ token }}"><button class="btn btn-primary" type="submit">Import {{ counts.new }} student{{ counts.new|pluralize }}</button></form>{% endif %}
+  <a class="btn" href="{% url 'student-import' %}">Upload a different file</a>
+</div>
+{% endif %}
+{% endblock %}

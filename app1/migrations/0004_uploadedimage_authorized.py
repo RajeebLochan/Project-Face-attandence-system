@@ -9,10 +9,19 @@ class Migration(migrations.Migration):
         ('app1', '0003_delete_visitor'),
     ]
 
+    # 0001_initial already creates the ``authorized`` column. Adding it again worked only
+    # on SQLite (which rebuilds the table) and fails on PostgreSQL with "column already
+    # exists". The state change is kept so migration history is unchanged; the redundant
+    # database operation is skipped. Databases that already applied this are unaffected.
     operations = [
-        migrations.AddField(
-            model_name='uploadedimage',
-            name='authorized',
-            field=models.BooleanField(default=False),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AddField(
+                    model_name='uploadedimage',
+                    name='authorized',
+                    field=models.BooleanField(default=False),
+                ),
+            ],
+            database_operations=[],
         ),
     ]

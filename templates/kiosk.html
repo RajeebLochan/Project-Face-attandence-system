@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Kiosk{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Kiosk</h1>
+    <p class="sub">One person at a time. Nothing is recorded until you confirm the match.</p>
+  </div>
+  {% if perms.app1.add_attendance %}<a class="btn" href="{% url 'attendance-manual' %}">Manual attendance</a>{% endif %}
+</div>
+
+<div id="kiosk" class="kiosk"
+     data-recognize-url="{% url 'kiosk-recognize' %}"
+     data-confirm-url="{% url 'kiosk-confirm' %}"
+     data-csrf-token="{{ csrf_token }}"
+     data-min-interval-ms="{{ min_interval_ms }}"
+     data-max-frame-bytes="{{ max_frame_bytes }}">
+  <section class="panel" aria-label="Camera">
+    <div class="camera">
+      <video id="kiosk-video" playsinline muted hidden></video>
+      <div class="placeholder" id="kiosk-placeholder">Camera off</div>
+    </div>
+    <div class="kiosk-controls">
+      <fieldset class="field">
+        <legend>Recording</legend>
+        <div class="segmented" role="radiogroup" aria-label="Recording mode">
+          {% for value, label in modes %}<label><input type="radio" name="kiosk-mode" value="{{ value }}"{% if forloop.first %} checked{% endif %}><span>{{ label }}</span></label>{% endfor %}
+        </div>
+      </fieldset>
+      <div class="field">
+        <label for="kiosk-camera">Camera</label>
+        <select id="kiosk-camera" disabled><option value="">Default camera</option></select>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-primary btn-large" id="kiosk-start">Start camera</button>
+        <button type="button" class="btn btn-large" id="kiosk-stop" disabled>Stop</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="stack" aria-label="Result">
+    <div id="kiosk-status" class="feedback" role="status" aria-live="polite" data-tone="">Press Start to turn on the camera.</div>
+    <div id="kiosk-candidate" class="panel" hidden>
+      <h2>Is this the person at the kiosk?</h2>
+      <div class="candidate mt-2">
+        <img id="candidate-photo" class="photo" alt="Enrolment photo of the proposed student" hidden>
+        <div>
+          <div id="candidate-name" class="brand-name"></div>
+          <div id="candidate-reg" class="mono secondary"></div>
+          <div id="candidate-class" class="secondary small"></div>
+          <div class="when actions"><time id="candidate-now" class="stamp"></time><span id="candidate-today" class="small secondary"></span></div>
+          <p class="help mt-1">Match distance <span id="candidate-distance" class="num"></span>, limit <span id="candidate-threshold" class="num"></span>. Lower is closer; it is not a probability.</p>
+        </div>
+      </div>
+      <div class="actions mt-2">
+        <button type="button" class="btn btn-primary btn-large" id="candidate-confirm"></button>
+        <button type="button" class="btn btn-large" id="candidate-reject">Not this person</button>
+      </div>
+    </div>
+    <p class="help">Frames are analysed on the server and discarded. Matching cannot tell a person from a photo or screen held up to the camera, so stay with the kiosk.</p>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'app1/kiosk.js' %}" defer></script>{% endblock %}

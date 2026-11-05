@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load attendance_tags %}
+{% block title %}Daily register{% endblock %}
+{% block content %}
+<div class="breadcrumb no-print"><a href="{% url 'reports' %}">Reports</a></div>
+<div class="page-head">
+  <div><h1>Register{% if day %} for {{ day|date:"l j F Y" }}{% endif %}</h1>{% if form.is_valid and form.cleaned_data.batch %}<p class="sub">{{ form.cleaned_data.batch.name }}</p>{% endif %}</div>
+  <div class="actions no-print"><button class="btn" type="button" data-print>Print</button></div>
+</div>
+<form method="get" class="filters" novalidate>
+  <div class="field"><label for="day">Date</label><input type="date" id="day" name="day" value="{% if day %}{{ day|date:'Y-m-d' }}{% endif %}"></div>
+  {% include "includes/field.html" with field=form.batch %}
+  <button class="btn" type="submit">Show</button>
+</form>
+{% include "includes/form_errors.html" %}
+{% if day %}
+<ul class="legend">{% for label, count, code in counts %}<li>{{ code|status_dot:label }}<b class="num">{{ count }}</b></li>{% endfor %}</ul>
+{% if entries %}
+<div class="table-wrap mt-2">
+  <table>
+    <thead><tr><th scope="col">Student</th><th scope="col">Batch</th><th scope="col">Status</th><th scope="col">In</th><th scope="col">Out</th><th scope="col" class="print-only">Initials</th></tr></thead>
+    <tbody>
+      {% for student, status, batch in entries %}
+      <tr>
+        <td>{{ student.name }}<span class="sub mono">{{ student.registration_number }}</span></td>
+        <td class="secondary">{{ batch.code|default:"—" }}</td>
+        <td>{{ status.status|status_dot:status.label }}{% if status.checkout_missing %} <span class="tag tag-warn">out not recorded</span>{% endif %}</td>
+        <td>{{ status.record.check_in_time|stamp }}</td>
+        <td>{{ status.record.check_out_time|stamp }}</td>
+        <td class="print-only"></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}<div class="panel empty mt-2">Nobody is on the register for this date.</div>{% endif %}
+{% endif %}
+<p class="print-only mt-2 small">Printed {% now "j F Y, H:i" %} ({{ time_zone }}).</p>
+{% endblock %}

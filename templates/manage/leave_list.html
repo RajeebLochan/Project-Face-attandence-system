@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Leave{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Leave</h1><p class="sub">Approved leave marks a day “On leave” instead of absent, unless the student checks in.</p></div></div>
+<div class="split">
+  <section>
+    <div class="segmented" role="group" aria-label="Show"><a href="?" {% if not show_all %}aria-current="true"{% endif %}>Current and recent</a><a href="?show=all" {% if show_all %}aria-current="true"{% endif %}>All, including cancelled</a></div>
+    {% if page.object_list %}
+    <div class="table-wrap mt-2"><table>
+      <thead><tr><th scope="col">Student</th><th scope="col">Dates</th><th scope="col">Reason</th><th scope="col">Recorded by</th>{% if perms.app1.change_leave %}<th scope="col"><span class="visually-hidden">Actions</span></th>{% endif %}</tr></thead>
+      <tbody>{% for leave in page.object_list %}<tr>
+        <td><a class="row-link" href="{% url 'student-detail' leave.student_id %}">{{ leave.student.name }}</a><span class="sub mono">{{ leave.student.registration_number }}</span></td>
+        <td class="num">{{ leave.start_date|date:"j M" }}–{{ leave.end_date|date:"j M Y" }}{% if leave.cancelled_at %} <span class="tag">cancelled</span>{% endif %}</td>
+        <td>{{ leave.reason }}</td>
+        <td class="secondary">{{ leave.recorded_by.get_username|default:"—" }}</td>
+        {% if perms.app1.change_leave %}<td>{% if not leave.cancelled_at %}<form method="post" action="{% url 'leave-cancel' leave.pk %}" data-once>{% csrf_token %}<button class="btn-link" type="submit">Cancel<span class="visually-hidden"> leave for {{ leave.student.name }}</span></button></form>{% endif %}</td>{% endif %}
+      </tr>{% endfor %}</tbody>
+    </table></div>
+    {% include "includes/pagination.html" %}
+    {% else %}<div class="panel empty mt-2">No leave recorded.</div>{% endif %}
+  </section>
+  {% if form %}
+  <form method="post" action="{% url 'leave-add' %}" class="panel" novalidate data-once>
+    {% csrf_token %}
+    <h2>Record leave</h2>
+    <div class="mt-2">{% for field in form %}{% include "includes/field.html" %}{% endfor %}</div>
+    <button class="btn btn-primary" type="submit">Record leave</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

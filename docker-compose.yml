@@ -1,0 +1,110 @@
+# Production-style stack: PostgreSQL, gunicorn web app, notification worker, digest
+# scheduler and a Caddy HTTPS proxy. Optional local mail catcher: --profile mailtest.
+# See docs/DEPLOYMENT.md. Secrets come from .env (copy deploy/env.production.example).
+
+x-app: &app
+  build: .
+  image: attendance-app:local
+  env_file: ${ENV_FILE:-.env}
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+  volumes:
+    - private:/data          # private photos and model files: web and worker only
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "5" }
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-attendance}
+      POSTGRES_USER: ${POSTGRES_USER:-attendance}
+      # The password is handed over as a Docker secret (a file), not an environment
+      # variable, so it does not show up in `docker inspect`. Its value comes from the
+      # POSTGRES_PASSWORD line in .env; see the `secrets` section at the end.
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-attendance} -d $${POSTGRES_DB:-attendance}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  web:
+    <<: *app
+    command: ["web"]
+    environment:
+      STATIC_SHARE_DIR: /srv/static
+    volumes:
+      - private:/data
+      - static:/srv/static
+    healthcheck:
+      test: ["CMD", "python", "deploy/healthcheck.py"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  worker:
+    <<: *app
+    command: ["worker"]
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "run_notification_worker", "--healthcheck"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+
+  scheduler:
+    <<: *app
+    command: ["scheduler"]
+
+  proxy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - static:/srv/static:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  mailpit:
+    image: axllent/mailpit:v1.20
+    profiles: ["mailtest"]
+    ports:
+      - "127.0.0.1:8025:8025"   # web inbox, local only
+    logging:
+      driver: json-file
+      options: { max-size: "5m", max-file: "2" }
+
+volumes:
+  pgdata:
+  private:
+  static:
+  caddy_data:
+  caddy_config:
+
+secrets:
+  db_password:
+    environment: POSTGRES_PASSWORD

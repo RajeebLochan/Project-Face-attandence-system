@@ -1,0 +1,145 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff==0.17.3
+      - run: ruff check .
+
+  test-sqlite:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - run: pip install -r requirements.txt
+      - run: pip check
+      - run: python manage.py check
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py test --noinput --exclude-tag browser --exclude-tag model
+
+  test-postgres:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          # Disposable database that only exists for this job on the runner; no password.
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: attendance
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres@localhost:5432/attendance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - run: pip install -r requirements-postgres.txt
+      - run: python manage.py migrate --noinput
+      - run: python manage.py test --noinput --exclude-tag browser --exclude-tag model
+
+  real-models:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - run: pip install -r requirements.txt
+      - run: python manage.py setup_face_models
+      - run: FACE_TEST_MODEL_DIR=var/models python manage.py test --noinput --tag model
+      - run: FACE_MODEL_DIR=var/models python scripts/benchmark_recognition.py
+
+  browser:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: python manage.py test --noinput --tag browser
+
+  deploy-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Production settings with representative values
+        env:
+          DJANGO_SETTINGS_MODULE: Project101.settings.prod
+          DJANGO_ALLOWED_HOSTS: attendance.example.edu
+          DJANGO_CSRF_TRUSTED_ORIGINS: https://attendance.example.edu
+          DJANGO_TRUST_X_FORWARDED_PROTO: "true"
+          DJANGO_SECURE_HSTS_PRELOAD: "true"
+        run: |
+          export DJANGO_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(64))')"
+          python manage.py check --deploy --fail-level WARNING
+      - name: Production refuses to start without a secret key
+        run: |
+          if DJANGO_SETTINGS_MODULE=Project101.settings.prod DJANGO_ALLOWED_HOSTS=a.example python manage.py check 2>err.txt; then
+            echo "expected failure"; exit 1
+          fi
+          grep -q "DJANGO_SECRET_KEY must be set" err.txt
+
+  deployment:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose file
+        run: |
+          printf 'SITE_ADDRESS=localhost\n' > ci.env
+          ENV_FILE=ci.env docker compose --env-file ci.env --profile mailtest config --quiet
+      - name: Build image
+        run: docker build -t attendance-app:local .
+      - name: Check the image contains no secrets, databases or model files
+        run: |
+          docker run --rm --entrypoint sh attendance-app:local -c \
+            'id -u | grep -qx 10001 && ! test -e /app/.env && ! find /app /data -name "*.sqlite3" -o -name "*.onnx" | grep -q .'
+      - name: End-to-end smoke test (HTTPS proxy, worker, mail catcher, backup/restore)
+        run: sh deploy/smoke-test.sh
+
+  security-audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit==2.10.1
+      - run: pip-audit -r requirements.txt
+      - run: pip-audit -r requirements-postgres.txt

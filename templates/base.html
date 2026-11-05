@@ -1,0 +1,57 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Attendance{% endblock %} · Attendance</title>
+  <link rel="preload" href="{% static 'app1/fonts/ibm-plex-sans-latin-400-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'app1/app.css' %}">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  {% if user.is_authenticated %}
+  <div class="shell">
+    <aside class="sidebar" aria-label="Sidebar">
+      <a class="brand" href="{% url 'home' %}">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">Attendance{% if institution_name %}<span class="brand-sub">{{ institution_name }}</span>{% endif %}</span>
+      </a>
+      <nav aria-label="Main">{% include "includes/nav.html" %}</nav>
+      <div class="sidebar-foot">
+        <span class="who">{{ user.get_full_name|default:user.get_username }}</span>
+        <a href="{% url 'privacy-notice' %}">Privacy notice</a>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn-link" type="submit">Log out</button></form>
+      </div>
+    </aside>
+    <header class="topbar">
+      <a class="brand" href="{% url 'home' %}"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">Attendance</span></a>
+      <details>
+        <summary>Menu</summary>
+        <div class="menu">
+          <nav aria-label="Main menu">{% include "includes/nav.html" %}</nav>
+          <div class="sidebar-foot">
+            <span class="who">{{ user.get_full_name|default:user.get_username }}</span>
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn-link" type="submit">Log out</button></form>
+          </div>
+        </div>
+      </details>
+    </header>
+    <main id="main">
+  {% else %}
+  <main id="main" class="auth">
+    <div class="auth-card">
+      <a class="brand" href="{% url 'login' %}"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">Attendance</span></a>
+  {% endif %}
+      {% include "includes/messages.html" %}
+      {% block content %}{% endblock %}
+  {% if user.is_authenticated %}
+    </main>
+  </div>
+  {% else %}
+    </div>
+  </main>
+  {% endif %}
+  {% block scripts %}{% endblock %}
+  <script src="{% static 'app1/forms.js' %}" defer></script>
+</body>
+</html>

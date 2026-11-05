@@ -1,0 +1,3 @@
+# Optional: PostgreSQL driver (recommended when several workers write concurrently).
+-r requirements.txt
+psycopg[binary]==3.3.8

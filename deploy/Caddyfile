@@ -1,0 +1,28 @@
+# HTTPS reverse proxy. Caddy obtains and renews certificates for SITE_ADDRESS
+# automatically (use a real DNS name pointing at this host). For a local trial,
+# SITE_ADDRESS=localhost uses Caddy's own local CA (browsers will warn).
+{$SITE_ADDRESS} {
+	encode zstd gzip
+	request_body {
+		max_size 8MB
+	}
+
+	# Static assets from the shared volume. Private biometric files are NOT mounted
+	# into this container, so no path here can expose them.
+	handle_path /static/* {
+		root * /srv/static
+		header Cache-Control "public, max-age=3600"
+		file_server
+	}
+
+	handle {
+		# Caddy sets X-Forwarded-Proto itself and does not pass through a client's
+		# value from an untrusted source, which DJANGO_TRUST_X_FORWARDED_PROTO=true relies on.
+		reverse_proxy web:8000
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

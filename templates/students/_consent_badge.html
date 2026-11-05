@@ -1,0 +1,1 @@
+{% if student.consent_status == "given" %}<span class="tag tag-ok">Consent given</span>{% elif student.consent_status == "withdrawn" %}<span class="tag tag-danger">Consent withdrawn</span>{% else %}<span class="tag">No consent recorded</span>{% endif %}

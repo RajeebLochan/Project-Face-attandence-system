@@ -1,0 +1,39 @@
+<div class="nav-group">
+  <ul class="nav">
+    <li><a href="{% url 'home' %}"{% if nav_section == 'home' %} aria-current="page"{% endif %}>Today</a></li>
+    {% if perms.app1.use_kiosk %}<li><a href="{% url 'kiosk' %}"{% if nav_section == 'kiosk' %} aria-current="page"{% endif %}>Kiosk</a></li>{% endif %}
+    {% if perms.app1.add_attendance %}<li><a href="{% url 'attendance-manual' %}"{% if nav_section == 'manual' %} aria-current="page"{% endif %}>Manual attendance</a></li>{% endif %}
+  </ul>
+</div>
+{% if perms.app1.view_attendance or perms.app1.view_auditevent %}
+<div class="nav-group">
+  <div class="nav-label">Records</div>
+  <ul class="nav">
+    {% if perms.app1.view_attendance %}
+    <li><a href="{% url 'reports' %}"{% if nav_section == 'reports' %} aria-current="page"{% endif %}>Reports</a></li>
+    <li><a href="{% url 'student_attendance_list' %}"{% if nav_section == 'records' %} aria-current="page"{% endif %}>Attendance log</a></li>
+    {% endif %}
+    {% if perms.app1.view_auditevent %}<li><a href="{% url 'audit-log' %}"{% if nav_section == 'audit' %} aria-current="page"{% endif %}>Audit history</a></li>{% endif %}
+  </ul>
+</div>
+{% endif %}
+{% if perms.app1.view_student or perms.app1.view_batch or perms.app1.view_leave %}
+<div class="nav-group">
+  <div class="nav-label">People</div>
+  <ul class="nav">
+    {% if perms.app1.view_student %}<li><a href="{% url 'student-list' %}"{% if nav_section == 'students' %} aria-current="page"{% endif %}>Students</a></li>{% endif %}
+    {% if perms.app1.view_batch %}<li><a href="{% url 'batch-list' %}"{% if nav_section == 'batches' %} aria-current="page"{% endif %}>Batches and schedules</a></li>{% endif %}
+    {% if perms.app1.view_leave %}<li><a href="{% url 'leave-list' %}"{% if nav_section == 'leave' %} aria-current="page"{% endif %}>Leave</a></li>{% endif %}
+  </ul>
+</div>
+{% endif %}
+{% if perms.app1.manage_notifications or perms.app1.manage_staff or perms.app1.manage_settings %}
+<div class="nav-group">
+  <div class="nav-label">Administration</div>
+  <ul class="nav">
+    {% if perms.app1.manage_notifications %}<li><a href="{% url 'notifications' %}"{% if nav_section == 'notifications' %} aria-current="page"{% endif %}>Notifications{% if failed_emails %} <span class="count" aria-label="{{ failed_emails }} failed">{{ failed_emails }} failed</span>{% endif %}</a></li>{% endif %}
+    {% if perms.app1.manage_staff %}<li><a href="{% url 'staff-list' %}"{% if nav_section == 'staff' %} aria-current="page"{% endif %}>Staff</a></li>{% endif %}
+    {% if perms.app1.manage_settings %}<li><a href="{% url 'settings' %}"{% if nav_section == 'settings' %} aria-current="page"{% endif %}>Settings</a></li>{% endif %}
+  </ul>
+</div>
+{% endif %}

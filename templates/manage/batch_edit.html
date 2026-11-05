@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{% if batch %}Edit {{ batch.name }}{% else %}Add batch{% endif %}{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{% url 'batch-list' %}">Batches</a></div>
+<div class="page-head"><h1>{% if batch %}Edit {{ batch.name }}{% else %}Add batch{% endif %}</h1></div>
+{% include "includes/form_errors.html" %}
+<form method="post" class="panel form" novalidate data-once>
+  {% csrf_token %}
+  {% for field in form %}{% include "includes/field.html" %}{% endfor %}
+  <div class="actions"><button class="btn btn-primary" type="submit">Save</button><a class="btn" href="{% if batch %}{% url 'batch-detail' batch.pk %}{% else %}{% url 'batch-list' %}{% endif %}">Cancel</a></div>
+</form>
+{% endblock %}

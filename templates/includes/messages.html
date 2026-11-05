@@ -1,0 +1,5 @@
+{% if messages %}
+<ul class="messages">
+  {% for message in messages %}<li class="notice notice-{{ message.tags|default:'info' }}" role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}">{{ message }}</li>{% endfor %}
+</ul>
+{% endif %}

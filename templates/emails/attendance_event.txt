@@ -1,0 +1,16 @@
+{% autoescape off %}{{ institution.name }}
+
+{% if kind == "correction" %}An attendance record was updated by staff.{% else %}{{ event_label }} recorded{% if manual %} manually by staff{% endif %}.{% endif %}
+
+Student: {{ student.name }}
+Registration number: {{ student.registration_number }}
+{% if kind == "correction" %}{% if after %}Date: {{ attendance.date|date:"l j F Y" }}
+Check-in: {% if after.check_in_time %}{{ after.check_in_time.time }} ({{ after.check_in_time.zone }}){% else %}not recorded{% endif %}
+Check-out: {% if after.check_out_time %}{{ after.check_out_time.time }} ({{ after.check_out_time.zone }}){% else %}not recorded{% endif %}{% else %}{{ event_label }} for {{ moment.date }} at {{ moment.time }} ({{ moment.zone }}){% endif %}{% else %}Date: {{ moment.date }}
+Time: {{ moment.time }} ({{ moment.zone }}){% if past_entry %}
+Entered later by staff, on {{ recorded.date }} at {{ recorded.time }}.{% endif %}{% endif %}
+
+If this looks wrong, contact {{ institution.contact_email }}{% if institution.contact_phone %} or {{ institution.contact_phone }}{% endif %}.
+{% if record_url %}
+Record (staff login required): {{ record_url }}{% endif %}
+{% endautoescape %}

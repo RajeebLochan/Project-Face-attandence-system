@@ -1,22 +1,80 @@
+from django.contrib.auth import views as auth_views
 from django.urls import path
-from . import views
-from . import views
-urlpatterns = [
-    path('capture_student/', views.capture_student, name='capture_student'),
-    path('', views.home, name='home'),
-    path('selfie-success/', views.selfie_success, name='selfie_success'),
-    path('capture-and-recognize/', views.capture_and_recognize, name='capture_and_recognize'),
-    path('students/attendance/', views.student_attendance_list, name='student_attendance_list'),
-    path('students/', views.student_list, name='student-list'),
-    path('students/<int:pk>/', views.student_detail, name='student-detail'),
-    path('students/<int:pk>/authorize/', views.student_authorize, name='student-authorize'),
-    path('students/<int:pk>/delete/', views.student_delete, name='student-delete'),
-    path('login/', views.user_login, name='login'),
-    path('logout/', views.user_logout, name='logout'),
-    path('camera-config/', views.camera_config_create, name='camera_config_create'),
-    path('camera-config/list/', views.camera_config_list, name='camera_config_list'),
-    path('camera-config/update/<int:pk>/', views.camera_config_update, name='camera_config_update'),
-    path('camera-config/delete/<int:pk>/', views.camera_config_delete, name='camera_config_delete'),
-]
-    
 
+from .views import attendance, auth, dashboard, kiosk, manage, notifications, reports, students
+
+urlpatterns = [
+    path("", dashboard.home, name="home"),
+    path("healthz", dashboard.healthz, name="healthz"),
+    path("readyz", dashboard.readyz, name="readyz"),
+    path("privacy/", dashboard.privacy_notice, name="privacy-notice"),
+    # Authentication. LogoutView only accepts POST (CSRF-protected).
+    path("login/", auth.ThrottledLoginView.as_view(), name="login"),
+    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("password-reset/", auth.ThrottledPasswordResetView.as_view(), name="password_reset"),
+    path("password-reset/sent/", auth_views.PasswordResetDoneView.as_view(), name="password_reset_done"),
+    path("password-reset/<uidb64>/<token>/", auth_views.PasswordResetConfirmView.as_view(),
+         name="password_reset_confirm"),
+    path("password-reset/complete/", auth_views.PasswordResetCompleteView.as_view(), name="password_reset_complete"),
+    # Students
+    path("students/", students.student_list, name="student-list"),
+    path("students/enroll/", students.student_enroll, name="student-enroll"),
+    path("students/import/", manage.import_students, name="student-import"),
+    path("students/import/confirm/", manage.import_confirm, name="student-import-confirm"),
+    path("students/<int:pk>/", students.student_detail, name="student-detail"),
+    path("students/<int:pk>/edit/", students.student_edit, name="student-edit"),
+    path("students/<int:pk>/contacts/", students.student_contacts, name="student-contacts"),
+    path("students/<int:pk>/verify/<str:role>/", students.student_verify_request, name="student-verify"),
+    path("students/<int:pk>/batch/", students.student_batch, name="student-batch"),
+    path("students/<int:pk>/status/", students.student_status, name="student-status"),
+    path("students/<int:pk>/photo/", students.student_photo, name="student-photo"),
+    path("students/<int:pk>/photo/replace/", students.student_photo_replace, name="student-photo-replace"),
+    path("students/<int:pk>/authorize/", students.student_authorize, name="student-authorize"),
+    path("students/<int:pk>/remove-biometrics/", students.student_remove_biometrics,
+         name="student-remove-biometrics"),
+    path("students/<int:pk>/delete/", students.student_delete, name="student-delete"),
+    # Attendance
+    path("students/attendance/", attendance.attendance_list, name="student_attendance_list"),
+    path("attendance/export.csv", attendance.attendance_export, name="attendance-export"),
+    path("attendance/manual/", attendance.attendance_manual, name="attendance-manual"),
+    path("attendance/manual/record/", attendance.attendance_manual_record, name="attendance-manual-record"),
+    path("attendance/manual/past/", attendance.attendance_manual_past, name="attendance-manual-past"),
+    path("attendance/<int:pk>/correct/", attendance.attendance_correct, name="attendance-correct"),
+    path("attendance/<int:pk>/review-checkout/", attendance.attendance_review_checkout,
+         name="attendance-review-checkout"),
+    path("audit/", attendance.audit_log, name="audit-log"),
+    # Reports
+    path("reports/", reports.report, name="reports"),
+    path("reports/export.csv", reports.report_export, name="report-export"),
+    path("reports/register/", reports.register_day, name="register-day"),
+    # Browser kiosk
+    path("kiosk/", kiosk.kiosk, name="kiosk"),
+    path("kiosk/recognize/", kiosk.kiosk_recognize, name="kiosk-recognize"),
+    path("kiosk/confirm/", kiosk.kiosk_confirm, name="kiosk-confirm"),
+    # Notifications
+    path("notifications/", notifications.notification_list, name="notifications"),
+    path("notifications/<int:pk>/", notifications.notification_detail, name="notification-detail"),
+    path("notifications/<int:pk>/html/", notifications.notification_html, name="notification-html"),
+    path("notifications/<int:pk>/retry/", notifications.notification_retry, name="notification-retry"),
+    path("notifications/<int:pk>/cancel/", notifications.notification_cancel, name="notification-cancel"),
+    path("notifications/preview/<str:kind>.<str:fmt>", notifications.template_preview, name="template-preview"),
+    path("verify-email/<str:token>/", notifications.verify_email, name="verify-email"),
+    # Administration
+    path("settings/", manage.settings_page, name="settings"),
+    path("settings/test-email/", notifications.test_email, name="test-email"),
+    path("staff/", manage.staff_list, name="staff-list"),
+    path("staff/new/", manage.staff_edit, name="staff-new"),
+    path("staff/<int:pk>/", manage.staff_edit, name="staff-edit"),
+    path("staff/<int:pk>/notifications/", manage.staff_preferences, name="staff-preferences"),
+    path("staff/<int:pk>/verify/", manage.staff_verify_request, name="staff-verify"),
+    path("batches/", manage.batch_list, name="batch-list"),
+    path("batches/new/", manage.batch_edit, name="batch-new"),
+    path("batches/<int:pk>/", manage.batch_detail, name="batch-detail"),
+    path("batches/<int:pk>/edit/", manage.batch_edit, name="batch-edit"),
+    path("batches/<int:pk>/schedule/", manage.schedule_add, name="schedule-add"),
+    path("holidays/add/", manage.holiday_add, name="holiday-add"),
+    path("holidays/<int:pk>/delete/", manage.holiday_delete, name="holiday-delete"),
+    path("leave/", manage.leave_list, name="leave-list"),
+    path("leave/add/", manage.leave_add, name="leave-add"),
+    path("leave/<int:pk>/cancel/", manage.leave_cancel, name="leave-cancel"),
+]

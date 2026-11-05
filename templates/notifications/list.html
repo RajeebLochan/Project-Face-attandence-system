@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Notification e-mails</h1>
+  <p class="sub">{% if config.notifications_enabled %}Attendance e-mails are on.{% else %}Attendance e-mails are off. Switch them on in <a href="{% url 'settings' %}">Settings</a>.{% endif %}
+  Worker {% if heartbeat %}last reported {{ heartbeat.last_seen|timesince }} ago{% else %}has never reported{% endif %}.</p></div>
+  <a class="btn" href="{% url 'settings' %}">E-mail settings</a>
+</div>
+{% if worker_stale %}<p class="notice notice-warning">No worker has reported in recently, so queued e-mails are not being sent. Start one with <span class="mono">python manage.py run_notification_worker</span> (the Compose setup runs it as the <span class="mono">worker</span> service).</p>{% endif %}
+<div class="segmented mt-2" role="group" aria-label="Filter by status">
+  <a href="?" {% if not form.cleaned_data.status %}aria-current="true"{% endif %}>All</a>
+  {% for value, label, count in counts %}<a href="?status={{ value }}" {% if form.cleaned_data.status == value %}aria-current="true"{% endif %}>{{ label }} <span class="muted num">&nbsp;{{ count }}</span></a>{% endfor %}
+</div>
+{% if page.object_list %}
+<div class="table-wrap mt-2">
+  <table>
+    <thead><tr><th scope="col">Created</th><th scope="col">Type</th><th scope="col">Recipient</th><th scope="col">Student</th><th scope="col">Status</th><th scope="col" class="count">Attempts</th></tr></thead>
+    <tbody>
+      {% for job in page.object_list %}
+      <tr>
+        <td class="num"><a class="row-link" href="{% url 'notification-detail' job.pk %}">{{ job.created_at|date:"j M, H:i" }}</a></td>
+        <td>{{ job.get_kind_display }}</td>
+        <td>{{ job.recipient_email }}<span class="sub">{{ job.get_recipient_role_display }}</span></td>
+        <td>{% if job.student %}{{ job.student.name }}{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td>{% if job.status == "sent" %}<span class="tag tag-ok">{{ job.get_status_display }}</span>{% elif job.status == "failed" %}<span class="tag tag-danger">Failed</span>{% elif job.status == "cancelled" %}<span class="tag">Cancelled</span>{% else %}<span class="tag tag-warn">{{ job.get_status_display }}</span>{% endif %}</td>
+        <td class="count">{{ job.attempts }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "includes/pagination.html" %}
+{% else %}<div class="panel empty mt-2">No e-mails{% if form.cleaned_data.status %} with this status{% endif %}.</div>{% endif %}
+<p class="help mt-2">“Accepted by mail server” means the outgoing server took the message. It does not prove it reached the inbox.</p>
+{% endblock %}
