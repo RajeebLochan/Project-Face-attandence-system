@@ -36,7 +36,8 @@ Replace every placeholder. In particular:
 - `SITE_ADDRESS`, `SITE_URL`, `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` all name
   the same host.
 - `DJANGO_SECRET_KEY` and `POSTGRES_PASSWORD` are long random values, and the password is
-  repeated in `DATABASE_URL`.
+  repeated in `DATABASE_URL`. Compose hands `POSTGRES_PASSWORD` to the database container as a
+  Docker secret (`/run/secrets/db_password`), so it does not appear in `docker inspect`.
 - The SMTP settings come from your mail provider (see [NOTIFICATIONS.md](NOTIFICATIONS.md)).
   Leave `EMAIL_HOST` empty to keep e-mail off.
 

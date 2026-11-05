@@ -23,7 +23,12 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-attendance}
       POSTGRES_USER: ${POSTGRES_USER:-attendance}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      # The password is handed over as a Docker secret (a file), not an environment
+      # variable, so it does not show up in `docker inspect`. Its value comes from the
+      # POSTGRES_PASSWORD line in .env; see the `secrets` section at the end.
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -99,3 +104,7 @@ volumes:
   static:
   caddy_data:
   caddy_config:
+
+secrets:
+  db_password:
+    environment: POSTGRES_PASSWORD

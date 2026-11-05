@@ -45,13 +45,14 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_PASSWORD: postgres
+          # Disposable database that only exists for this job on the runner; no password.
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: attendance
         ports: ["5432:5432"]
         options: >-
           --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/attendance
+      DATABASE_URL: postgres://postgres@localhost:5432/attendance
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -121,7 +122,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate Compose file
         run: |
-          printf 'SITE_ADDRESS=localhost\nPOSTGRES_PASSWORD=x\n' > ci.env
+          printf 'SITE_ADDRESS=localhost\n' > ci.env
           ENV_FILE=ci.env docker compose --env-file ci.env --profile mailtest config --quiet
       - name: Build image
         run: docker build -t attendance-app:local .
